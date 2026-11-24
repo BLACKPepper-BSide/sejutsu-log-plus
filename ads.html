@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<link rel="manifest" href="./ads.webmanifest" crossorigin="use-credentials">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="施術ログ＋Free">
+<title>施術ログ＋Free | B面</title>
+<style>
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1c2937;
+  background: #f5f7fa;
+  --blue: #1769b1;
+  --dark: #164f82;
+  --muted: #586c80;
+  --rule: #e2e7ed;
+  --soft: #eef4fa;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, select, textarea { font: inherit; }
+button, summary { cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 3px solid #347ec3; outline-offset: 2px; }
+header { background: #fff; border-bottom: 1px solid #e5eaf0; }
+.wrap { max-width: 650px; margin: auto; padding-inline: 14px; }
+.brand { min-height: 62px; display: flex; align-items: center; gap: 10px; padding-inline: 18px; }
+.brand strong { font-size: 22px; font-weight: 750; }
+.brand .mark { color: var(--muted); font-size: 13px; }
+main { padding-top: 15px; padding-bottom: calc(95px + env(safe-area-inset-bottom)); }
+h1, h2, h3, p, dl, dd { margin: 0; }
+h1, h2 { font-size: 18px; line-height: 1.4; }
+h3 { font-size: 15px; }
+.heading { margin-bottom: 13px; }
+.sub { font-size: 13px; line-height: 1.6; color: var(--muted); }
+.panel, .record, .stack { display: grid; gap: 10px; min-width: 0; }
+.panel { padding: 17px; margin-bottom: 13px; background: white; border: 1px solid var(--rule); border-radius: 15px; }
+.panel > h1, .panel > h2 { margin-bottom: 4px; }
+.entry-panel { gap: 13px; }
+.record { padding: 13px; border: 1px solid #e3e8ee; border-radius: 12px; }
+.store-record { gap: 8px; }
+.row, .line { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.line { justify-content: space-between; }
+.row > *, .line > * { min-width: 0; }
+.split, .month-headlines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.wide { width: 100%; }
+button { min-height: 44px; padding: 8px 12px; border: 1px solid #cbd5df; border-radius: 9px; background: white; color: #24374c; font-weight: 650; }
+.primary { background: var(--blue); border-color: var(--blue); color: white; }
+.active { border-color: var(--blue); background: #e9f2fb; color: var(--blue); font-weight: 750; }
+.danger { color: #b42336; }
+.quiet { border-color: transparent; background: transparent; }
+.field, .field-label { display: grid; gap: 5px; min-width: 0; font-size: 14px; font-weight: 650; }
+input:not([type=checkbox]):not([type=radio]), select, textarea {
+  width: 100%; min-width: 0; min-height: 46px; padding: 10px 11px;
+  border: 1px solid #cbd5df; border-radius: 9px; background: white; color: inherit; font-size: 16px;
+}
+input[type=file] { font-size: 14px !important; }
+textarea { resize: vertical; line-height: 1.5; }
+input[type=checkbox], input[type=radio] { width: 19px; height: 19px; flex: none; accent-color: var(--blue); }
+.check { min-height: 44px; display: flex; align-items: center; gap: 7px; }
+.checks { display: flex; flex-wrap: wrap; gap: 0 10px; }
+.counter-list .line { padding: 4px 0; flex-wrap: nowrap; border-bottom: 1px solid #edf0f3; }
+.counter-list .line > span { font-size: 15px; }
+.count { display: flex; align-items: center; gap: 7px; flex: none; }
+.count button { width: 44px; padding: 0; color: var(--dark); font-size: 19px; }
+.count output { min-width: 24px; text-align: center; font-size: 17px; font-weight: 700; }
+details > summary { min-height: 44px; padding: 11px 0; font-size: 15px; font-weight: 700; }
+details[open] > summary { margin-bottom: 6px; }
+.fold, .divider { border-top: 1px solid #edf0f3; }
+.fold { min-width: 0; }
+.fold > .stack, .fold > form, .fold > .split { margin-bottom: 8px; }
+.divider:not(details) { padding-top: 8px; }
+.store-estimate { border-top: 1px solid #edf0f3; padding-top: 8px; }
+.store-estimate.hide-single { display: none; }
+.amount-block { display: grid; align-content: start; gap: 4px; min-width: 0; padding: 13px; border-radius: 12px; background: var(--soft); }
+.amount-block span { color: var(--muted); font-size: 13px; }
+.amount { color: var(--dark); font-size: 27px; font-weight: 800; line-height: 1.2; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.amount-compact { font-size: 19px; }
+.month-label { font-size: 14px; font-weight: 650; }
+.results { min-width: 0; }
+.results > div { display: flex; align-items: baseline; justify-content: space-between; gap: 9px; padding: 9px 0; border-bottom: 1px solid #edf0f3; }
+.results > div:last-child { border-bottom: 0; }
+.results dt { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+.results dd { flex-shrink: 0; text-align: right; white-space: nowrap; font-size: 15px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.dow { padding-bottom: 3px; text-align: center; font-size: 13px; color: var(--muted); }
+.day { min-height: 71px; padding: 4px 0; display: grid; align-content: start; justify-items: center; gap: 1px; border-radius: 7px; font-size: 14px; line-height: 1.15; }
+.day-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  max-width: 72px;
+  padding: 1px 2px;
+}
+.treatment-dot {
+  display: inline-block;
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: inset 0 0 0 1px #0003;
+  print-color-adjust: exact;
+}
+.dot-free { --dot: #efbd29; }
+.dot-personal { --dot: #2879ce; }
+.dot-gender { --dot: #359957; }
+.day-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: 13px; }
+.day-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.day small { font-size: 12px; font-weight: 500; }
+.day.work { background: var(--soft); border-color: #d5e3f0; }
+.day.off { background: #f2f4f6; }
+.day.today { border-color: var(--blue); }
+.day.active { border-color: var(--blue); outline: 2px solid var(--blue); outline-offset: -2px; }
+.hero { background: #164f82; color: white; padding: 19px; }
+.hero .sub { color: #e4f0fc; }
+.chart { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; }
+.bar { display: grid; grid-template-rows: 72px auto; align-items: end; min-height: auto; padding: 2px; border: 0; border-radius: 5px; font-size: 12px; }
+.bar i { height: var(--h); width: 75%; margin: auto auto 0; border-radius: 4px 4px 0 0; background: #4388d9; display: block; }
+.bar.active { box-shadow: inset 0 0 0 1px #91b5db; }
+.rank { width: 100%; text-align: left; justify-content: space-between; }
+.memo { white-space: pre-wrap; overflow-wrap: anywhere; }
+.goal progress { width: 100%; accent-color: var(--blue); }
+.nav { position: fixed; inset: auto 0 0; z-index: 4; background: #fff; border-top: 1px solid #dbe2ea; padding-bottom: env(safe-area-inset-bottom); }
+.nav .wrap { display: grid; grid-template-columns: repeat(4, 1fr); padding-inline: 6px; }
+.nav button { min-height: 51px; padding: 7px 3px 10px; border: 0; border-top: 3px solid transparent; border-radius: 0; background: white; font-size: 14px; color: var(--muted); }
+.nav button.active { border-top-color: var(--blue); color: var(--blue); font-weight: 800; }
+.notice { position: fixed; bottom: calc(66px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 5; max-width: calc(100vw - 24px); width: max-content; padding: 11px 16px; border-radius: 12px; color: #fff; background: #153a65; white-space: pre-wrap; box-shadow: 0 4px 16px #1233; }
+.notice.error { background: #842d3b; }
+.notice:empty { display: none; }
+.warning { padding: 10px; color: #694922; background: #fff6e4; }
+.version { text-align: center; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 375px) {
+  .wrap { padding-inline: 12px; }
+  .panel { padding: 14px; }
+  .amount-block { padding: 10px; }
+  .amount { font-size: 25px; }
+  .amount-compact { font-size: 18px; }
+  .day small { font-size: 11px; }
+}
+@media print {
+  header, .nav, .no-print, .notice { display: none !important; }
+  body { background: white; }
+  .wrap { max-width: none; }
+  main { padding: 0 !important; }
+  .amount-block, .day { border: 1px solid #aaa; }
+  .results > div, .amount-block, .day { break-inside: avoid; }
+}
+.move-controls { display: flex; gap: 5px; }
+.move-controls button { width: 44px; padding: 0; }
+button:disabled { opacity: .45; cursor: default; }
+.day .day-pay { max-width: 100%; font-size: 10px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+input[aria-invalid=true] { border-color: #b42336 !important; }
+dialog { max-width: min(440px, calc(100% - 28px)); padding: 17px; border: 1px solid var(--rule); border-radius: 15px; color: inherit; }
+dialog > h2 { margin-bottom: 12px; }
+dialog::backdrop { background: #192b407a; }
+
+.monthly-ad {
+  display: grid;
+  place-items: center;
+  min-height: 60px;
+  border: 1px dashed #cbd5df;
+  border-radius: 9px;
+  background: #f5f7fa;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+</style>
+</head>
+<body>
+<header><div class="wrap brand"><strong>施術ログ＋</strong><span class="mark">B面</span></div></header>
+<main id="app" class="wrap" data-ads="true"></main>
+<div id="notice" class="notice" role="status" aria-live="polite"></div>
+<nav class="nav" aria-label="メインメニュー"><div class="wrap">
+<button data-tab="entry">入力</button>
+<button data-tab="month">月間記録</button>
+<button data-tab="review">振り返り</button>
+<button data-tab="settings">設定</button>
+</div></nav>
+<script>
+'use strict';
+
+const STORAGE_KEY = 'bside-sejutsu-log-plus-v1';
+const today = new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+const weekdays = ['日','月','火','水','木','金','土'];
+const kinds = {free:'フリー',personal:'個人指名',gender:'性別指名'};
+const payFields = {base:'税込換算単価（円／60分）',facility:'施設利用料（円／60分）',material:'固定材料費（円／60分）',personal:'個人指名報酬（円／件）',gender:'性別指名報酬（円／件）'};
+const goalFields = {minutes:'総施術時間',personalMinutes:'個人指名施術時間',requests:'指名件数（個人＋性別）',net:'総施術売上（税抜）',holiday:'休日施術売上（税抜）',pay:'報酬金額'};
+const historyFields = {minutes:'施術時間',personalMinutes:'個人指名時間',genderMinutes:'性別指名時間',personal:'個人指名件数',gender:'性別指名件数',net:'施術売上（税抜・円）',holiday:'休日施術売上（税抜・円）',pay:'報酬（円）',workDays:'出勤日数',offDays:'休日数'};
+const optionalFields = {work:'実際の勤務時間',notes:'日ごとのメモ',requestMinutes:'まとめ入力の指名時間',content:'施術内容',clock:'施術開始時刻',memo:'施術ごとのメモ',options:'オプション欄'};
+const isTime = key => ['minutes','personalMinutes','genderMinutes'].includes(key);
+const own = (o,k) => Object.hasOwn(o,k);
+const obj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+const dateOf = d => new Date(d+'T00:00:00Z');
+const dateString = d => d.toISOString().slice(0,10);
+const validDate = d => typeof d==='string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && d>='1900-01-01' && d<='2199-12-31' && Number.isFinite(+dateOf(d)) && dateString(dateOf(d))===d;
+const validMonth = m => typeof m==='string' && validDate(m+'-01');
+const weekday = d => dateOf(d).getUTCDay();
+function changeMonth(m,n) {
+  const date=dateOf(m+'-01');
+  date.setUTCMonth(date.getUTCMonth()+n);
+  const result=dateString(date).slice(0,7);
+  return validMonth(result)?result:m;
+}
+function endOfMonth(m) {
+  const date=dateOf(m+'-01');
+  date.setUTCMonth(date.getUTCMonth()+1,0);
+  return dateString(date);
+}
+const check = (ok,msg='バックアップの形式を確認してください。') => {if(!ok)throw new Error(msg)};
+const finite = (v,min=0,max=1e9) => Number.isFinite(v) && v>=min && v<=max;
+const integer = (v,max=1e9) => Number.isInteger(v) && finite(v,0,max);
+const nullable = (v,test) => v===null || test(v);
+const clock = v => typeof v==='string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(v);
+function normalizeClock(value) {
+  const raw=value.trim();
+  if(!raw)return '';
+  const match=/^(\d{1,2}):?(\d{2})$/.exec(raw);
+  if(!match)return null;
+  const formatted=match[1].padStart(2,'0')+':'+match[2];
+  return clock(formatted)?formatted:null;
+}
+const clockMinutes = v => +v.slice(0,2)*60 + +v.slice(3);
+const clockSpan = (a,b) => (clockMinutes(b)-clockMinutes(a)+1440)%1440;
+const textOK = v => typeof v==='string' && v.length<=10000;
+const idOK = v => typeof v==='string' && /^[\w-]{1,100}$/.test(v) && !['__proto__','constructor','prototype'].includes(v);
+const sum = (rows,fn) => rows.reduce((total,row)=>total+fn(row),0);
+function optionalSum(values) {
+  const known=values.filter(v=>v!==null);
+  return known.length?sum(known,v=>v):null;
+}
+const completeSum = values => values.includes(null)?null:sum(values,v=>v);
+const uid = () => crypto.randomUUID?.() ?? 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2);
+const legacyOptions = () => [{id:'mattress',name:'プレミアムマットレス',share:0}];
+function initialState() {
+  return {format:STORAGE_KEY,version:1,stores:[{id:'store1',name:'店舗A'}],settings:{base:3600,facility:212,material:108,personal:0,gender:0,options:legacyOptions()},rates:{},days:{},deposits:{},history:{},carry:null,goals:[],showGoals:true,holidays:[0,6],holidayDates:[],hidden:[]};
+}
+function snapshot(state,date) {
+  return {...structuredClone(state.settings),rate:state.rates[date.slice(0,7)]??null};
+}
+function blankEntry(state,date,store=state.stores[0].id) {
+  return {store,mode:'summary',minutes:0,personal:0,gender:0,personalMinutes:null,genderMinutes:null,counts:{},work:{mode:'clock',start:'',end:'',breaks:0,total:null},details:[],pay:snapshot(state,date)};
+}
+function blankDetail() {
+  return {time:'',minutes:60,content:'',kind:'free',charge:null,options:[],memo:''};
+}
+function detailTotals(items) {
+  const counts={};
+  for(const item of items) for(const id of item.options) counts[id]=(counts[id]??0)+1;
+  return {minutes:sum(items,v=>v.minutes),personal:items.filter(v=>v.kind==='personal').length,gender:items.filter(v=>v.kind==='gender').length,
+    personalMinutes:sum(items,v=>v.kind==='personal'?v.minutes:0),genderMinutes:sum(items,v=>v.kind==='gender'?v.minutes:0),counts};
+}
+function entryTotals(e) {
+  const detail=detailTotals(e.details);
+  const count=e.mode==='detail'?detail:e;
+  const actualItems=e.details.filter(d=>d.charge!==null);
+  const actual=sum(actualItems,d=>d.charge);
+  const actualMinutes=sum(actualItems,d=>d.minutes);
+  const estimated=Math.max(0,count.minutes-actualMinutes)*e.pay.base/60;
+  const gross=actual+estimated;
+  const source=!count.minutes&&!actualItems.length?'none':actualItems.length?(actualMinutes===count.minutes?'actual':'mixed'):'estimate';
+  const options=sum(e.pay.options,o=>(count.counts[o.id]??0)*o.share);
+  const facility=count.minutes/60*e.pay.facility;
+  const material=count.minutes/60*e.pay.material;
+  const personalPay=count.personal*e.pay.personal;
+  const genderPay=count.gender*e.pay.gender;
+  const system=e.pay.rate===null?null:gross*e.pay.rate/100;
+  const pay=system===null?null:gross*(1-e.pay.rate/100)-facility-material+personalPay+genderPay+options;
+  const work=e.work.mode==='total'?e.work.total:(clock(e.work.start)&&clock(e.work.end)?Math.max(0,clockSpan(e.work.start,e.work.end)-e.work.breaks):null);
+  const personalMissing=count.personalMinutes===null&&detail.personal<count.personal;
+  const genderMissing=count.genderMinutes===null&&detail.gender<count.gender;
+  return {minutes:count.minutes,personal:count.personal,gender:count.gender,
+    personalMinutes:count.personalMinutes??(personalMissing&&!detail.personal?null:detail.personalMinutes),
+    genderMinutes:count.genderMinutes??(genderMissing&&!detail.gender?null:detail.genderMinutes),
+    personalMissing,genderMissing,counts:count.counts,actual,estimated,gross,net:gross/1.1,source,options,facility,material,personalPay,genderPay,system,pay,work};
+}
+const isHoliday = (state,d) => state.holidays.includes(weekday(d)) || state.holidayDates.includes(d);
+function dailyRows(state, date, day, store='') {
+  if(day.status==='off') return [];
+  return day.entries.filter(e=>!store||e.store===store).map(e=>({date,...entryTotals(e),holiday:isHoliday(state,date)}));
+}
+function groupTotals(rows,offDays=0) {
+  const minutes=sum(rows,r=>r.minutes);
+  const work=optionalSum(rows.map(r=>r.work));
+  const knownWork=rows.filter(r=>r.work!==null);
+  return {minutes,work,workMissing:rows.length-knownWork.length,utilization:work>0?sum(knownWork,r=>r.minutes)/work:null,
+    personalMinutes:optionalSum(rows.map(r=>r.personalMinutes)),
+    genderMinutes:optionalSum(rows.map(r=>r.genderMinutes)),
+    personalMissing:rows.some(r=>r.personalMissing),genderMissing:rows.some(r=>r.genderMissing),
+    personal:sum(rows,r=>r.personal),gender:sum(rows,r=>r.gender),
+    net:sum(rows,r=>r.net),holiday:sum(rows,r=>r.holiday?r.net:0),pay:completeSum(rows.map(r=>r.pay)),
+    workDays:new Set(rows.map(r=>r.date)).size,offDays,records:rows.length};
+}
+function monthTotals(state,month,store='') {
+  const days=Object.entries(state.days).filter(([date])=>date.startsWith(month));
+  if(!days.length&&!store&&own(state.history,month)) {
+    return {...state.history[month],historic:true,work:null,utilization:null,workMissing:0,records:1};
+  }
+  return groupTotals(days.flatMap(([date,day])=>dailyRows(state,date,day,store)),store?0:days.filter(([,d])=>d.status==='off').length);
+}
+const allMonths = state => [...new Set([...Object.keys(state.history),...Object.keys(state.days).map(d=>d.slice(0,7))])].sort();
+function goalProgress(state,g) {
+  const days=Object.entries(state.days).filter(([d])=>g.from<=d&&d<=g.to);
+  const dayTotals=groupTotals(days.flatMap(([d,v])=>dailyRows(state,d,v)));
+  const months=allMonths(state).filter(m=>g.from<=m+'-01'&&endOfMonth(m)<=g.to).map(m=>monthTotals(state,m)).filter(m=>m.historic);
+  const read = r => g.metric==='requests'?nullableAdd(r.personal,r.gender):r[g.metric];
+  const values=[...(dayTotals.records?[read(dayTotals)]:[]),...months.map(read)];
+  const partial=values.includes(null)||(g.metric==='personalMinutes'&&dayTotals.personalMissing);
+  return {value:values.length?optionalSum(values):0,partial};
+}
+function nullableAdd(a,b) {return a===null||b===null?null:a+b}
+function validateSettings(s,withRate=false) {
+  check(obj(s)&&Object.keys(payFields).every(k=>finite(s[k]))&&Array.isArray(s.options));
+  const ids=new Set();
+  for(const o of s.options) {
+    check(obj(o)&&idOK(o.id)&&!ids.has(o.id)&&textOK(o.name)&&o.name.trim()&&finite(o.share));
+    ids.add(o.id);
+  }
+  if(withRate)check(nullable(s.rate,v=>finite(v,0,100)));
+}
+function validateEntry(e,stores) {
+  check(obj(e)&&stores.includes(e.store)&&['summary','detail'].includes(e.mode));
+  validateSettings(e.pay,true);
+  const options=e.pay.options.map(o=>o.id);
+  check(integer(e.minutes,1440)&&integer(e.personal)&&integer(e.gender)&&obj(e.counts)&&Object.entries(e.counts).every(([k,v])=>options.includes(k)&&integer(v)));
+  check(nullable(e.personalMinutes,v=>integer(v,1440))&&nullable(e.genderMinutes,v=>integer(v,1440)));
+  check(obj(e.work)&&['clock','total'].includes(e.work.mode)&&nullable(e.work.total,v=>integer(v,1440))&&integer(e.work.breaks,1440));
+  check([e.work.start,e.work.end].every(v=>v===''||clock(v)));
+  check(Array.isArray(e.details)&&e.details.every(d=>obj(d)&&(d.time===''||clock(d.time))&&integer(d.minutes,1440)&&d.minutes>0&&own(kinds,d.kind)&&textOK(d.content)&&textOK(d.memo)&&nullable(d.charge,integer)&&Array.isArray(d.options)&&new Set(d.options).size===d.options.length&&d.options.every(id=>options.includes(id))));
+  if(e.mode==='summary') {
+    const detail=detailTotals(e.details);
+    check(detail.minutes<=e.minutes,'個別の施術時間の合計を、まとめ入力の合計施術時間以内にしてください。');
+    check(detail.personal<=e.personal&&detail.gender<=e.gender,'個別の指名件数を、まとめ入力の指名件数以内にしてください。');
+    check(Object.entries(detail.counts).every(([k,count])=>count<=(e.counts[k]??0)),'個別のオプション件数を、まとめ入力の件数以内にしてください。');
+    check((e.personalMinutes??detail.personalMinutes)+(e.genderMinutes??detail.genderMinutes)+detail.minutes-detail.personalMinutes-detail.genderMinutes<=e.minutes,'個人・性別指名時間の合計を、合計施術時間以内にしてください。');
+    check((e.personalMinutes===null||e.personalMinutes>=detail.personalMinutes)&&(e.genderMinutes===null||e.genderMinutes>=detail.genderMinutes),'入力した指名時間が、個別に記録した指名時間より短くなっています。');
+    check((e.personal||!e.personalMinutes)&&(e.gender||!e.genderMinutes),'指名時間を入れる場合は、対応する指名件数も入れてください。');
+  }
+}
+function validateState(s) {
+  check(obj(s)&&s.format===STORAGE_KEY&&s.version===1&&Array.isArray(s.stores)&&s.stores.length>0);
+  const ids=s.stores.map(o=>o?.id);
+  check(new Set(ids).size===ids.length&&s.stores.every(o=>idOK(o.id)&&textOK(o.name)&&o.name.trim()));
+  validateSettings(s.settings);
+  check(obj(s.rates)&&Object.entries(s.rates).every(([m,v])=>validMonth(m)&&finite(v,0,100)));
+  check(obj(s.days)&&obj(s.deposits)&&obj(s.history));
+  for(const [date,day] of Object.entries(s.days)) {
+    check(validDate(date)&&obj(day)&&['work','off'].includes(day.status)&&Array.isArray(day.notes)&&day.notes.every(n=>obj(n)&&['📝','⭐'].includes(n.mark)&&textOK(n.text))&&Array.isArray(day.entries));
+    check(day.status==='work'?day.entries.length>0:day.entries.length===0);
+    for(const e of day.entries)validateEntry(e,ids);
+  }
+  for(const [m,v] of Object.entries(s.deposits))check(validMonth(m)&&obj(v)&&nullable(v.amount,integer)&&(v.date===''||validDate(v.date)));
+  for(const [m,v] of Object.entries(s.history)) {
+    check(validMonth(m)&&obj(v)&&Object.keys(historyFields).every(k=>nullable(v[k],k==='pay'?a=>finite(a,-1e9):isTime(k)||['personal','gender','workDays','offDays'].includes(k)?integer:finite)));
+    check((v.workDays??0)+(v.offDays??0)<=Number(endOfMonth(m).slice(8)),'出勤日数と休日数の合計を確認してください。');
+    check(v.minutes===null||(v.personalMinutes??0)+(v.genderMinutes??0)<=v.minutes,'指名時間の合計を確認してください。');
+    check(v.net===null||v.holiday===null||v.holiday<=v.net,'休日施術売上を確認してください。');
+  }
+  check(s.carry===null||(obj(s.carry)&&validMonth(s.carry.month)&&integer(s.carry.minutes)));
+  check(Array.isArray(s.goals)&&new Set(s.goals.map(g=>g?.id)).size===s.goals.length&&s.goals.every(g=>obj(g)&&idOK(g.id)&&own(goalFields,g.metric)&&validDate(g.from)&&validDate(g.to)&&g.from<=g.to&&finite(g.target,.01)));
+  check(typeof s.showGoals==='boolean'&&Array.isArray(s.holidays)&&s.holidays.every(d=>integer(d,6))&&Array.isArray(s.holidayDates)&&s.holidayDates.every(validDate)&&Array.isArray(s.hidden)&&s.hidden.every(k=>own(optionalFields,k)));
+  return s;
+}
+function migrateLegacy(raw) {
+  check(obj(raw)&&(raw.version===1||raw.version===undefined)&&Array.isArray(raw.stores)&&raw.stores.length>0&&obj(raw.settings)&&obj(raw.rates)&&obj(raw.days),'通常版の施術ログから書き出したJSONを選んでください。');
+  const s=initialState();
+  s.stores=structuredClone(raw.stores);
+  for(const k of Object.keys(payFields)) {
+    check((typeof raw.settings[k]==='number'||typeof raw.settings[k]==='string')&&String(raw.settings[k]).trim()!==''&&finite(Number(raw.settings[k])));
+    s.settings[k]=Number(raw.settings[k]);
+  }
+  if(raw.settings.mattress!==undefined) {
+    check(finite(Number(raw.settings.mattress)));
+    s.settings.options[0].share=Number(raw.settings.mattress);
+  }
+  for(const [m,v] of Object.entries(raw.rates)) {
+    check(validMonth(m));
+    if(v!==null&&v!=='') {check(finite(Number(v),0,100));s.rates[m]=Number(v)}
+  }
+  for(const [date,day] of Object.entries(raw.days)) {
+    check(validDate(date)&&obj(day)&&['work','off'].includes(day.status)&&Array.isArray(day.entries));
+    const entries=day.status==='off'?[]:day.entries.map(o=>{
+      check(obj(o)&&idOK(o.store));
+      if(!s.stores.some(store=>store.id===o.store))s.stores.push({id:o.store,name:'旧店舗（'+o.store+'）'});
+      const entry=blankEntry(s,date,o.store);
+      const oldClock = v => {
+        if(!v)return '';
+        const m=/^(\d{1,2}):?(\d{2})$/.exec(v);
+        const result=m?m[1].padStart(2,'0')+':'+m[2]:'';
+        return clock(result)?result:'';
+      };
+      return {...entry,minutes:Number(o.minutes),personal:Number(o.personal??0),gender:Number(o.gender??0),counts:{mattress:Number(o.mattress??0)},
+        work:{...entry.work,start:oldClock(o.start),end:oldClock(o.end),breaks:Number(o.breaks??0)}};
+    });
+    const notes=Array.isArray(day.notes)?day.notes.map(n=>({mark:n?.mark==='⭐'?'⭐':'📝',text:String(n?.text??'')})):day.note?[{mark:'📝',text:String(day.note)}]:[];
+    s.days[date]={status:day.status,entries,notes};
+  }
+  return validateState(s);
+}
+function mergeLegacy(current,source) {
+  const next=structuredClone(current);
+  const aliases=new Map();
+  for(const s of source.stores) {
+    const exact=next.stores.find(t=>t.id===s.id&&t.name===s.name);
+    const migratedId='old-'+s.id.slice(0,95);
+    let id=exact?.id??(next.stores.some(t=>t.id===s.id)?migratedId:s.id);
+    if(!exact) {
+      let suffix=1;
+      while(next.stores.some(t=>t.id===id&&t.name!==s.name))id=migratedId.slice(0,93)+'-'+suffix++;
+      if(!next.stores.some(t=>t.id===id))next.stores.push({...s,id});
+    }
+    aliases.set(s.id,id);
+  }
+  const unused=JSON.stringify(current)===JSON.stringify(initialState());
+  if(unused) {
+    next.stores=structuredClone(source.stores);
+    for(const s of source.stores)aliases.set(s.id,s.id);
+    next.settings=structuredClone(source.settings);
+    next.rates=structuredClone(source.rates);
+  }
+  let added=0,skipped=0;
+  for(const [date,day] of Object.entries(source.days)) {
+    if(own(next.days,date)){skipped++;continue}
+    next.days[date]={...day,entries:day.entries.map(e=>({...e,store:aliases.get(e.store)}))};
+    added++;
+  }
+  return {next,added,skipped,adoptsSettings:unused};
+}
+
+const $ = id => document.getElementById(id);
+const app=$('app');
+const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = (v,max=0) => v===null||v===undefined?'未記録':v.toLocaleString('ja-JP',{maximumFractionDigits:max});
+const yen = v => v===null||v===undefined?'未記録':num(Math.round(v))+'円';
+const hours = v => v===null||v===undefined?'未記録':num(v/60,2)+'時間';
+const mins = v => v===null||v===undefined?'未記録':num(v)+'分';
+const qty = v => v===null||v===undefined?'未記録':num(v)+'件';
+const daysFmt = v => v===null||v===undefined?'未記録':num(v)+'日';
+const payFmt = v => v===null?'料率未設定':yen(v);
+const monthLabel = v => v.replace('-','年')+'月';
+const sourceLabel = {actual:'実入力',estimate:'概算',mixed:'実入力＋概算',none:'施術なし'};
+const maybeNumber = v => v===''?null:Number(v);
+const button = (label,action,attrs='',cls='') => '<button type="button" class="'+cls+'" data-action="'+action+'" '+attrs+'>'+label+'</button>';
+const input = (name,type,value='',attr='') => '<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" '+attr+'>';
+const numeric = (name,value,max=1e9,step='1',attr='') => input(name,'number',value,'min="0" max="'+max+'" step="'+step+'" '+attr);
+const timeInput = (name,value) => input(name,'text',value,'data-clock inputmode="numeric" autocomplete="off" placeholder="例 1330"');
+const field = (label,html) => '<label class="field"><span>'+label+'</span>'+html+'</label>';
+const option = (value,label,selected) => '<option value="'+esc(value)+'" '+(value===selected?'selected':'')+'>'+esc(label)+'</option>';
+const select = (name,html,attr='') => '<select name="'+name+'" '+attr+'>'+html+'</select>';
+const textarea = (name,value) => '<textarea name="'+name+'" rows="2" maxlength="1000">'+esc(value)+'</textarea>';
+const box = (title,html,id='') => '<section class="panel"'+(id?' id="'+id+'"':'')+'><h2>'+title+'</h2>'+html+'</section>';
+const lines = items => '<dl class="results">'+items.map(([label,value])=>'<div><dt>'+label+'</dt><dd>'+value+'</dd></div>').join('')+'</dl>';
+const fold = (title,html,key,print=false) => '<details class="fold" data-fold="'+key+'"'+(print?' data-print-expand':'')+'><summary>'+title+'</summary>'+html+'</details>';
+const form = (id,html,attr='') => '<form data-form="'+id+'" class="stack" '+attr+'>'+html+'</form>';
+const stepper = (label,key,value) => '<div class="line"><span>'+esc(label)+'</span><div class="count">'+button('−','count','data-key="'+key+'" data-delta="-1" aria-label="'+esc(label)+'を減らす"')+'<output data-count-value="'+key+'">'+value+'</output>'+button('＋','count','data-key="'+key+'" data-delta="1" aria-label="'+esc(label)+'を増やす"')+'</div></div>';
+const submit = label => '<button class="primary" type="submit">'+label+'</button>';
+const dateInput = (name,value) => input(name,'date',value,'required min="1900-01-01" max="2199-12-31"');
+const monthInput = (name,value,optional=false) => input(name,'month',value,(optional?'':'required')+' min="1900-01" max="2199-12"');
+const nameOf = id => state.stores.find(x=>x.id===id)?.name??'店舗';
+const storeOptions = (id,exclude=[]) => state.stores.filter(x=>x.id===id||!exclude.includes(x.id)).map(x=>option(x.id,x.name,id)).join('');
+const openIf = v => v?' open':'';
+const show = key => !state.hidden.includes(key);
+let state=initialState(), stored=null, storageError='';
+try {
+  stored=localStorage.getItem(STORAGE_KEY);
+  if(stored!==null) state=validateState(JSON.parse(stored));
+} catch(e) {storageError='端末内の記録を読み込めませんでした。バックアップの復元から回復できます。'}
+let tab='entry',date=today,month=today.slice(0,7),reviewMonth=month,filterStore='', chartMetric='minutes';
+let rateMonth=month,historyMonth=month, timer, dirty=false, detailDate='';
+let draft=loadDay(date);
+function loadDay(d) {
+  return own(state.days,d)?structuredClone(state.days[d]):{status:'work',entries:[blankEntry(state,d)],notes:[]};
+}
+function notice(msg,error=false,duration=error?8500:4200) {
+  clearTimeout(timer);
+  $('notice').textContent=msg;
+  $('notice').classList.toggle('error',error);
+  timer=setTimeout(()=>$('notice').textContent='',duration);
+}
+function persist(next,recover=false) {
+  validateState(next);
+  check(!storageError||recover,'端末内の記録を保護しています。設定からバックアップを復元してください。');
+  check(localStorage.getItem(STORAGE_KEY)===stored,'別の画面で記録が更新されました。ページを開き直してください。');
+  const value=JSON.stringify(next);
+  try {localStorage.setItem(STORAGE_KEY,value)} catch {throw new Error('保存できませんでした。ブラウザの保存設定や空き容量を確認してください。')}
+  stored=value;
+  state=next;
+  storageError='';
+}
+function changeState(mutator,msg='保存しました',repaint=true) {
+  const next=structuredClone(state);
+  mutator(next);
+  persist(next);
+  if(repaint)render();
+  notice(msg);
+}
+function allowLeave() {
+  return !dirty||confirm('編集中の内容を閉じますか？ 保存した記録は残ります。');
+}
+function go(next) {
+  if(next===tab)return;
+  if(tab==='entry'&&!allowLeave())return;
+  if(next==='entry'){draft=loadDay(date);dirty=false;}
+  tab=next;
+  render();
+  window.scrollTo(0,0);
+}
+function openDate(d) {
+  if(!validDate(d)||(tab==='entry'&&!allowLeave()))return;
+  date=d;
+  draft=loadDay(d);
+  dirty=false;
+  tab='entry';
+  render();
+  window.scrollTo(0,0);
+}
+function heading(title,sub='') {
+  return '<div class="heading"><h1>'+title+'</h1>'+(sub?'<p class="sub">'+sub+'</p>':'')+'</div>';
+}
+function workFields(work) {
+  if(!show('work'))return '';
+  const has=work.mode==='total'?work.total!==null:work.start||work.end;
+  return '<details class="divider"'+openIf(has)+'><summary>実際の勤務時間（任意）</summary><div class="stack">'+
+    field('入力方法',select('work.mode',option('clock','開始・終了時刻',work.mode)+option('total','合計時間',work.mode)))+
+    (work.mode==='clock'?'<div class="split">'+field('出勤時刻',timeInput('work.start',work.start))+field('退勤時刻',timeInput('work.end',work.end))+'</div>'+
+      field('休憩（分）',numeric('work.breaks',work.breaks,1440))+'<p class="sub">退勤が出勤より早いときは翌日扱いです。</p>':
+      '<div class="split">'+field('合計（時間）',numeric('work.hours',work.total===null?'':Math.floor(work.total/60),24))+field('残り（分）',numeric('work.minutes',work.total===null?'':work.total%60,59))+'</div>')+
+    '</div></details>';
+}
+function notesFields(notes) {
+  if(!show('notes'))return '';
+  return fold('日ごとのメモ'+(notes.length?'（'+notes.length+'件）':'（任意）'),'<div class="stack">'+
+    notes.map((n,i)=>'<div class="record" data-note="'+i+'"><div class="line">'+field('マーク',select('noteMark',option('📝','📝 メモ',n.mark)+option('⭐','⭐ 星',n.mark)))+button('削除','note-remove','', 'danger')+'</div>'+field('内容',textarea('noteText',n.text))+'</div>').join('')+
+    button('＋ メモを追加','note-add')+'</div>','day-notes');
+}
+function detailFields(d,i,e,index) {
+  const estimated=Math.round(d.minutes*e.pay.base/60);
+  const fields='<div class="split">'+field('施術時間（分）',input('minutes','number',d.minutes,'min="1" max="1440" step="1"'))+
+    field('税込基本施術料金（円）',numeric('charge',d.charge??estimated,1e9,1,'aria-describedby="charge-'+i+'-'+index+'"'))+
+    field('指名区分',select('kind',Object.entries(kinds).map(([k,v])=>option(k,v,d.kind)).join('')))+
+    (show('clock')?field('施術開始時刻（任意）',timeInput('time',d.time)):'')+'</div>';
+  const move=e.details.length>1?'<div class="move-controls">'+
+    button('↑','detail-move','data-delta="-1" aria-label="施術 '+(i+1)+' を上へ移動"'+(i===0?' disabled':''))+
+    button('↓','detail-move','data-delta="1" aria-label="施術 '+(i+1)+' を下へ移動"'+(i===e.details.length-1?' disabled':''))+'</div>':'';
+  return '<div class="record" data-detail="'+i+'"><div class="line"><h3>施術 '+(i+1)+'</h3><div class="row">'+move+button('削除','detail-remove','','danger')+'</div></div>'+
+    fields+'<div class="line"><span class="sub charge-status" id="charge-'+i+'-'+index+'">'+(d.charge===null?'概算料金':'実入力料金')+'</span>'+button('概算に戻す','estimate-reset','','quiet')+'</div>'+
+    (show('options')&&e.pay.options.length?'<details'+openIf(d.options.length)+'><summary>オプション（任意）</summary>'+e.pay.options.map(o=>'<label class="check">'+input('option','checkbox',o.id,d.options.includes(o.id)?'checked':'')+esc(o.name)+'</label>').join('')+'</details>':'')+
+    (show('content')||show('memo')?'<details'+openIf(d.content||d.memo)+'><summary>施術内容・メモ（任意）</summary><div class="stack">'+
+      (show('content')?field('施術内容',input('content','text',d.content,'maxlength="160"')):'')+(show('memo')?field('施術ごとのメモ',textarea('memo',d.memo)):'')+'</div></details>':'')+'</div>';
+}
+function estimateHTML(e,showPay=draft.entries.length>1) {
+  if(e.mode==='summary'&&detailTotals(e.details).minutes>e.minutes)return '<span>個別分を含めた合計施術時間を入力してください。</span>';
+  const v=entryTotals(e);
+  return (showPay?'<div class="line"><span>報酬目安</span><strong>'+payFmt(v.pay)+'</strong></div>':'')+
+    '<p class="sub">基本施術売上（税込） '+yen(v.gross)+'（'+sourceLabel[v.source]+'）'+(e.details.length?' ／ 個別記録 '+mins(detailTotals(e.details).minutes):'')+'</p>';
+}
+function entryFields(e,i) {
+  const detail=e.mode==='detail';
+  const others=draft.entries.filter((_,j)=>i!==j).map(row=>row.store);
+  const switchMode=button(detail?'1日まとめて入力に戻す':'施術ごとに入力へ切り替え','mode','data-mode="'+(detail?'summary':'detail')+'"');
+  const individual='<div class="stack">'+
+    '<p class="sub">'+(detail?'料金に指名料・オプション料金は含めずに入力してください。':
+      '個別記録は上の合計の内訳です。個別の料金を入力すると、その分の概算を置き換えます。')+'</p>'+
+    (e.details.length>1?'<div class="row">'+button('時刻順に並べ替え','detail-sort')+'</div>':'')+
+    e.details.map((d,j)=>detailFields(d,j,e,i)).join('')+
+    button('＋ 施術を追加','detail-add')+'</div>';
+  return '<section class="record store-record" data-entry="'+i+'">'+
+    (draft.entries.length>1?'<div class="line"><h3>店舗 '+(i+1)+'</h3>'+button('削除','entry-remove','aria-label="店舗枠を削除"','danger quiet')+'</div>':'')+
+    field('店舗',select('store',storeOptions(e.store,others)))+
+    (detail?'<p class="sub">施術ごとに入力</p>'+individual+switchMode:
+      field('合計施術時間（分）',numeric('minutes',e.minutes,1440,1,'inputmode="numeric"'))+
+      '<div class="counter-list">'+stepper('個人指名','personal',e.personal)+stepper('性別指名','gender',e.gender)+
+      (show('options')?e.pay.options.map(o=>stepper(o.name,'option-'+o.id,e.counts[o.id]??0)).join(''):'')+'</div>'+
+      (show('requestMinutes')?fold('指名施術時間（任意）','<div class="split">'+
+        field('個人指名（分）',numeric('personalMinutes',e.personalMinutes,1440))+field('性別指名（分）',numeric('genderMinutes',e.genderMinutes,1440))+'</div>','request-minutes'):'')+
+      workFields(e.work)+
+      fold('施術ごとの入力（任意）'+(e.details.length?'　'+e.details.length+'件':''),e.details.length?individual+switchMode:
+        '<div class="stack">'+switchMode+button('＋ 合計の内訳として施術を追加','detail-add')+'</div>','individual'))+
+    (detail?workFields(e.work):'')+
+    '<div class="store-estimate'+(draft.entries.length===1&&!e.details.length?' hide-single':'')+'" data-estimate>'+estimateHTML(e)+'</div></section>';
+}
+function entryScreen() {
+  const saved=state.days[date];
+  const canAdd=state.stores.some(s=>!draft.entries.some(e=>e.store===s.id));
+  return '<section class="panel entry-panel"><h1>毎日の記録</h1>'+
+    field('日付',dateInput('entryDate',date))+'<div class="stack"><span class="field-label">勤務状況</span><div class="split">'+
+    ['work','off'].map(s=>button(s==='work'?'出勤':'休み','status','data-status="'+s+'" aria-pressed="'+(draft.status===s)+'"',draft.status===s?'active':'')).join('')+
+    '</div></div>'+
+    (draft.status==='work'?draft.entries.map(entryFields).join('')+(canAdd?button('＋ 別の店舗の記録を追加','entry-add','','wide'):''):'')+
+    notesFields(draft.notes)+'<div class="amount-block" id="daily-live">'+dailyEstimateHTML()+'</div>'+
+    button(saved?'変更を保存':'この日の記録を保存','save-day','','primary wide')+
+    (saved?button('この日の記録を削除','delete-day','','danger quiet'):'')+'</section>';
+}
+function dailyEstimateHTML() {
+  const totals=draft.status==='off'?[]:draft.entries.map(entryTotals);
+  return '<span>この日の報酬目安</span><strong class="amount">'+(draft.status==='off'?'休み':payFmt(completeSum(totals.map(v=>v.pay))))+'</strong>'+
+    (draft.status==='off'?'':'<span>合計施術時間 '+mins(sum(totals,v=>v.minutes))+'</span>');
+}
+function updateEstimate() {
+  document.querySelectorAll('[data-entry]').forEach(el=>el.querySelector('[data-estimate]').innerHTML=estimateHTML(draft.entries[+el.dataset.entry]));
+  if($('daily-live'))$('daily-live').innerHTML=dailyEstimateHTML();
+}
+const treatmentDot = kind => '<span class="treatment-dot dot-'+kind+'" aria-hidden="true"></span>';
+function calendar() {
+  const start=weekday(month+'-01');
+  const len=+endOfMonth(month).slice(8);
+  let html=weekdays.map(w=>'<div class="dow">'+w+'</div>').join('')+'<div></div>'.repeat(start);
+  for(let n=1;n<=len;n++) {
+    const d=month+'-'+String(n).padStart(2,'0');
+    const record=state.days[d];
+    const rows=record?dailyRows(state,d,record,filterStore):[];
+    const off=record?.status==='off'&&!filterStore;
+    const status=off?'off':rows.length?'work':'empty';
+    const minutes=sum(rows,row=>row.minutes);
+    const pay=rows.length?completeSum(rows.map(row=>row.pay)):null;
+    const details=rows.length?record.entries.filter(e=>!filterStore||e.store===filterStore).flatMap(e=>e.details):[];
+    const dots=details.length?'<span class="day-dots" aria-hidden="true">'+details.map(item=>treatmentDot(item.kind)).join('')+'</span>':'';
+    const detailCount=details.length
+      ? ' 個別記録 '+Object.entries(kinds).map(([kind,label])=>label+qty(details.filter(item=>item.kind===kind).length)).join('、')
+      : '';
+    const body='<strong>'+n+'</strong>'+dots+(off?'<small>休み</small>':rows.length?'<small>'+mins(minutes)+'</small><small class="day-pay">'+(pay===null?'未設定':yen(pay))+'</small>':'');
+    html+=button(body,'show-day','data-date="'+d+'" aria-label="'+d+(off?' 休み':rows.length?' 出勤 '+mins(minutes)+' 報酬目安 '+payFmt(pay)+detailCount:' 未記録')+'"','day '+status+(d===today?' today':'')+(d===detailDate?' active':''));
+  }
+  const legend=Object.entries(kinds).map(([kind,label])=>'<li>'+treatmentDot(kind)+label+'</li>').join('');
+  return '<div class="cal">'+html+'</div><ul class="day-legend" aria-label="個別施術記録の凡例">'+legend+'</ul>';
+}
+function memoMarkup(text) {return '<p class="memo">'+esc(text)+'</p>'}
+function dayDetails(d) {
+  const day=state.days[d];
+  const rows=day?day.entries.filter(e=>!filterStore||e.store===filterStore):[];
+  return box(d+'（'+weekdays[weekday(d)]+'）',
+    (day?'<p>'+(day.status==='off'?'休み':'出勤')+'</p>':'<p class="sub">記録はありません。</p>')+
+    rows.map(e=>{
+      const v=entryTotals(e);
+      return '<div class="record"><strong>'+esc(nameOf(e.store))+' ／ '+mins(v.minutes)+' ／ '+payFmt(v.pay)+'</strong>'+
+        '<p class="sub">税込基本施術売上 '+yen(v.gross)+' ／ 勤務 '+hours(v.work)+'</p>'+
+        '<p class="sub">個人指名 '+qty(v.personal)+'・'+mins(v.personalMinutes)+(v.personalMissing&&v.personalMinutes!==null?'（記録分）':'')+' ／ 性別指名 '+qty(v.gender)+'・'+mins(v.genderMinutes)+(v.genderMissing&&v.genderMinutes!==null?'（記録分）':'')+'</p>'+
+        e.details.map(item=>'<div class="divider"><strong>'+esc(item.time||'')+' '+mins(item.minutes)+'・'+kinds[item.kind]+' ／ '+yen(item.charge??item.minutes*e.pay.base/60)+'</strong>'+
+          (item.options.length?'<p class="sub">'+item.options.map(id=>esc(e.pay.options.find(o=>o.id===id).name)).join('・')+'</p>':'')+
+          (item.content?memoMarkup(item.content):'')+(item.memo?memoMarkup(item.memo):'')+'</div>').join('')+'</div>';
+    }).join('')+
+    (day?.notes.length?'<div class="stack"><h3>日ごとのメモ</h3>'+day.notes.map(n=>memoMarkup(n.mark+' '+n.text)).join('')+'</div>':'')+
+    button(day?'この日を編集':'この日を入力','edit-day','data-date="'+d+'"','primary no-print'),'selected-day');
+}
+function recordedHours(value,incomplete) {
+  return hours(value)+(value!==null&&incomplete?'（記録分）':'');
+}
+function groupStats(total) {
+  return lines([['報酬目安',total.historic?yen(total.pay):payFmt(total.pay)],['施術時間',hours(total.minutes)],
+    ['個人指名時間',recordedHours(total.personalMinutes,total.personalMissing)],['個人指名件数',qty(total.personal)],
+    ['性別指名時間',recordedHours(total.genderMinutes,total.genderMissing)],['性別指名件数',qty(total.gender)],
+    ['施術売上（税抜）',yen(total.net)],['休日施術売上（税抜）',yen(total.holiday)],
+    ['出勤日数',daysFmt(total.workDays)],['休みの日数',daysFmt(total.offDays)]]);
+}
+function monthlyPayLines(total) {
+  const entries=Object.entries(state.days).filter(([d,v])=>d.startsWith(month)&&v.status==='work')
+    .flatMap(([,v])=>v.entries.filter(e=>!filterStore||e.store===filterStore));
+  const rows=entries.map(entryTotals);
+  const amount=key=>total.historic?null:sum(rows,row=>row[key]);
+  const countAndPay=(count,pay)=>qty(count)+(pay===null?'':'　'+yen(pay));
+  const mattress={count:0,pay:0};
+  const extras=new Map();
+  entries.forEach((e,i)=>{
+    for(const option of e.pay.options) {
+      const count=rows[i].counts[option.id]??0;
+      if(!count)continue;
+      const target=option.id==='mattress'||option.name==='プレミアムマットレス'?mattress:
+        (extras.get(option.name)??{count:0,pay:0});
+      target.count+=count;
+      target.pay+=count*option.share;
+      if(target!==mattress)extras.set(option.name,target);
+    }
+  });
+  return lines([
+    ['出勤日数',daysFmt(total.workDays)],['休みの日数',filterStore?'対象外':daysFmt(total.offDays)],
+    ['個人指名',countAndPay(total.personal,amount('personalPay'))],['性別指名',countAndPay(total.gender,amount('genderPay'))],
+    ['プレミアムマットレス',total.historic?'未記録':countAndPay(mattress.count,mattress.pay)],
+    ...[...extras].map(([label,v])=>[esc(label),countAndPay(v.count,v.pay)]),
+    ['施設利用料',yen(amount('facility'))],['固定材料費',yen(amount('material'))]
+  ]);
+}
+function amountBlock(label,value) {
+  return '<div class="amount-block"><span>'+label+'</span><strong class="amount'+(value.length>8?' amount-compact':'')+'">'+value+'</strong></div>';
+}
+function monthScreen() {
+  const total=monthTotals(state,month,filterStore);
+  const dep=state.deposits[month]??{amount:null,date:''};
+  const systemFees=Object.entries(state.days).filter(([d])=>d.startsWith(month))
+    .flatMap(([d,day])=>dailyRows(state,d,day,filterStore)).map(row=>row.system);
+  const goals=state.showGoals?state.goals.filter(g=>g.from<=endOfMonth(month)&&g.to>=month+'-01'):[];
+  const historyNote=total.historic?'過去実績として登録した月合計です。':
+    !filterStore&&own(state.history,month)?'この月は日別記録を集計しています。':'';
+  const showingDay=detailDate.startsWith(month);
+  const ad=app.dataset.ads==='true'&&!showingDay
+    ? '<aside class="monthly-ad no-print" aria-label="広告枠">広告枠</aside>'
+    : '';
+  return '<section class="panel"><h1>月間記録</h1>'+ad+
+    '<div class="split no-print">'+field('表示月',monthInput('monthView',month))+field('表示店舗',select('storeFilter',option('','全店舗',filterStore)+storeOptions(filterStore)))+'</div>'+
+    '<h2 class="sr-only">月間集計</h2><p class="month-label">'+monthLabel(month)+(filterStore?' ／ '+esc(nameOf(filterStore)):'')+'</p>'+
+    '<div class="month-headlines">'+amountBlock('合計施術時間',hours(total.minutes))+amountBlock('報酬目安',total.historic?yen(total.pay):payFmt(total.pay))+'</div>'+
+    (historyNote?'<p class="sub">'+historyNote+'</p>':'')+
+    monthlyPayLines(total)+'</section>'+
+    box('月間カレンダー',calendar())+
+    (showingDay?dayDetails(detailDate):'')+
+    box('追加実績',fold('指名時間・勤務時間・売上',lines([
+      ['個人指名時間',recordedHours(total.personalMinutes,total.personalMissing)],['性別指名時間',recordedHours(total.genderMinutes,total.genderMissing)],
+      ['実際の勤務時間',recordedHours(total.work,total.workMissing)],['稼働率',total.utilization===null?'未記録':num(100*total.utilization,1)+'%'+(total.workMissing?'（記録分）':'')],
+      ['施術売上（税抜）',yen(total.net)],['休日施術売上（税抜）',yen(total.holiday)],
+      ...(systemFees.length?[['システム利用料',yen(completeSum(systemFees))]]:[])
+    ])+(total.workMissing?'<p class="sub">稼働率は勤務時間を入力した店舗枠で集計しています。勤務時間が未記録の店舗枠 '+total.workMissing+'件</p>':''),'extra-actual',true)+
+    (goals.length?fold('マイ目標','<div class="stack">'+(filterStore?'<p class="sub">マイ目標は全店舗の実績を集計します。</p>':'')+goals.map(goalCard).join('')+'</div>','month-goals',true):'')+
+    (!filterStore?fold('実際の入金',form('depositForm',
+      lines([['入金額',yen(dep.amount)],['入金日',dep.date||'未記録'],['差額（入金−目安）',dep.amount!==null&&total.pay!==null&&total.records?yen(dep.amount-total.pay):'—']])+
+      '<div class="split no-print">'+field('入金額（円・任意）',numeric('amount',dep.amount))+field('入金日（任意）',input('paidDate','date',dep.date,'min="1900-01-01" max="2199-12-31"'))+'</div><div class="no-print">'+submit('入金を保存')+'</div>'),'deposit',true):'')+
+    '<div class="row no-print">'+button('月間CSV','csv')+button('時間帯別CSV','hourly')+button('印刷・PDF保存','print')+'</div>') ;
+}
+
+function annualTotals(year) {
+  const rows=allMonths(state).filter(m=>m.startsWith(year)).map(m=>monthTotals(state,m));
+  const total=Object.fromEntries(Object.keys(historyFields).map(k=>[k,optionalSum(rows.map(r=>r[k]))]));
+  total.pay=rows.length?completeSum(rows.map(r=>r.pay)):null;
+  total.personalMissing=rows.some(r=>r.personalMissing||r.personalMinutes===null);
+  total.genderMissing=rows.some(r=>r.genderMissing||r.genderMinutes===null);
+  total.historic=true;
+  return total;
+}
+function metricText(key,value) {
+  if(isTime(key))return hours(value);
+  return key==='requests'?qty(value):yen(value);
+}
+function goalCard(goal) {
+  const p=goalProgress(state,goal);
+  const percent=p.value===null?null:100*p.value/goal.target;
+  return '<div class="record goal"><div class="line"><strong>'+goalFields[goal.metric]+'</strong><span>'+(percent===null?'未記録':num(percent,1)+'%')+'</span></div>'+
+    '<p class="sub">'+goal.from+' 〜 '+goal.to+'</p>'+
+    '<strong>'+metricText(goal.metric,p.value)+' ／ '+metricText(goal.metric,goal.target)+'</strong>'+
+    '<progress max="100" value="'+Math.max(0,Math.min(100,percent??0))+'" aria-label="目標達成率"></progress>'+
+    '<p class="sub">'+(p.partial?'記録できた分で集計しています。 ':'')+
+    (p.value===null?'':p.value>=goal.target?'目標達成！':'目標まであと '+metricText(goal.metric,goal.target-p.value))+'</p></div>';
+}
+function chart(year) {
+  const items=Array.from({length:12},(_,i)=>year+'-'+String(i+1).padStart(2,'0'));
+  const vals=items.map(m=>monthTotals(state,m)[chartMetric]);
+  const max=Math.max(1,...vals.filter(v=>v!==null));
+  return '<div class="split">'+field('表示する項目',select('chartMetric',option('minutes','施術時間',chartMetric)+option('pay','報酬',chartMetric)))+'</div>'+
+    '<div class="chart">'+items.map((m,i)=>button('<i style="--h:'+Math.round(Math.max(0,vals[i]??0)/max*72)+'px"></i><span>'+(i+1)+'月</span>',
+      'review-month','data-month="'+m+'" aria-label="'+monthLabel(m)+' '+(chartMetric==='minutes'?hours(vals[i]):yen(vals[i]))+'" title="'+(chartMetric==='minutes'?hours(vals[i]):yen(vals[i]))+'"','bar'+(m===reviewMonth?' active':''))).join('')+'</div>';
+}
+function ranks() {
+  const daily=Object.entries(state.days).filter(([,d])=>d.status==='work').map(([d,v])=>[d,groupTotals(dailyRows(state,d,v))]);
+  const monthly=allMonths(state).map(m=>[m,monthTotals(state,m)]).filter(([,v])=>v.records);
+  const rankings=[
+    ['1日で一番揉んだ日',daily,v=>v.minutes,mins],
+    ['1日で一番個人指名を揉んだ日',daily,v=>v.personalMissing?null:v.personalMinutes,mins],
+    ['1日で一番指名が多かった日',daily,v=>v.personal+v.gender,qty],
+    ['1日で一番稼いだ日',daily,v=>v.pay,yen,true],
+    ['一番揉んだ月',monthly,v=>v.minutes,hours],
+    ['一番稼いだ月',monthly,v=>v.pay,yen,true]
+  ];
+  return rankings.map(([label,rows,read,fmt,allowNegative])=>{
+    const top=rows.map(([k,v])=>[k,read(v)]).filter(([,v])=>v!==null&&(allowNegative||v>0))
+      .sort(([da,a],[db,b])=>b-a||db.localeCompare(da)).slice(0,5);
+    return '<details class="record"><summary>'+label+(top.length?' ／ '+fmt(top[0][1]):' ／ 記録なし')+'</summary><div class="stack">'+
+      (top.length?top.map(([key,v],i)=>button('<span>'+(i+1)+'位　'+(key.length===7?monthLabel(key):key)+'</span><strong>'+fmt(v)+'</strong>',
+        'rank-open','data-key="'+key+'"','rank line')).join(''):'<p class="sub">集計できる記録がありません。</p>')+'</div></details>';
+  }).join('');
+}
+function reviewScreen() {
+  const year=reviewMonth.slice(0,4);
+  const logged=sum(allMonths(state),m=>monthTotals(state,m).minutes??0);
+  const prefix=state.carry?state.carry.month:'';
+  const countedBefore=prefix?sum(allMonths(state).filter(m=>m<prefix),m=>monthTotals(state,m).minutes??0):0;
+  return heading('振り返り')+'<aside class="monthly-ad no-print" style="margin-bottom:13px" aria-label="広告枠">広告枠</aside>'+'<section class="panel hero"><h2>累計施術時間</h2><strong style="font-size:1.9rem">'+hours(logged-countedBefore+(state.carry?.minutes??0))+'</strong>'+
+    (state.carry?'<p class="sub">'+monthLabel(prefix)+'より前は、登録した開始前累計を使用しています。</p>':'')+'</section>'+
+    (state.showGoals&&state.goals.length?box('マイ目標',state.goals.map(goalCard).join('')):'')+
+    box('月別の記録',field('表示月',monthInput('reviewMonth',reviewMonth))+groupStats(monthTotals(state,reviewMonth)))+
+    box(year+'年の記録',chart(year)+groupStats(annualTotals(year)))+
+    box('自己ベスト','<p class="sub">施術ログ＋に登録した実績の上位5件です。</p>'+ranks());
+}
+function editStore(s) {
+  return form('storeEdit','<div class="line">'+field('店舗名',input('name','text',s.name,'required maxlength="60"'))+submit('変更を保存')+'</div>','data-id="'+s.id+'"');
+}
+function optionForm(o) {
+  return form('optionEdit','<div class="split">'+field('オプション名',input('name','text',o?.name,'required maxlength="60"'))+
+    field('報酬（円／件）',numeric('share',o?.share,1e9,'any','required'))+'</div><div class="row">'+submit(o?'変更を保存':'追加')+
+    (o?button('今後の入力欄から外す','remove-option','data-id="'+o.id+'"','danger'):'')+'</div>',o?'data-id="'+o.id+'"':'');
+}
+function goalEditor(g) {
+  return form('goalEdit','<div class="stack">'+field('目標の種類',select('metric',Object.entries(goalFields).map(([k,v])=>option(k,v,g?.metric??'minutes')).join('')))+
+    '<div class="split">'+field('開始日',dateInput('from',g?.from??month+'-01'))+field('終了日',dateInput('to',g?.to??endOfMonth(month)))+'</div>'+
+    field('目標値（時間・件・円）',numeric('target',g?(isTime(g.metric)?+(g.target/60).toFixed(6):g.target):'',1e9,'any','required'))+
+    '<div class="row">'+submit(g?'変更を保存':'目標を追加')+(g?button('目標を削除','remove-goal','data-id="'+g.id+'"','danger'):'')+'</div></div>',g?'data-id="'+g.id+'"':'');
+}
+function disclosure(title,content,key) {
+  return '<details class="panel" data-setting="'+key+'"><summary>'+title+'</summary>'+content+'</details>';
+}
+function settingsScreen() {
+  const rate=state.rates[rateMonth];
+  const hist=state.history[historyMonth];
+  const missing=Object.entries(state.days).filter(([d])=>d.startsWith(rateMonth)).flatMap(([,d])=>d.entries).filter(e=>e.pay.rate===null).length;
+  const settingField=key=>field(payFields[key],numeric(key,state.settings[key],1e9,'any','required'));
+  const hasRecords=Object.keys(state.days).length||Object.keys(state.deposits).length||Object.keys(state.history).length||state.carry!==null;
+  return heading('設定')+
+    box('報酬設定',form('payForm',
+      settingField('base')+'<div class="split">'+settingField('facility')+settingField('material')+'</div>'+
+      '<h3>指名報酬（1件あたり）</h3><div class="split">'+settingField('personal')+settingField('gender')+'</div>'+
+      '<p class="sub">変更は新しい店舗枠に適用します。保存済みの報酬は記録時の単価で計算します。</p>'+submit('単価を保存'))+
+      form('rateForm','<h3>月別システム利用料率</h3><div class="split">'+field('対象月',monthInput('rateMonth',rateMonth))+
+        field('優待適用後のシステム利用料率（%）',numeric('rate',rate,100,'any','required'))+'</div>'+submit('月の利用料率を保存')+
+        (missing?'<p class="sub">料率未設定の店舗枠 '+missing+'件</p>'+button('未設定の既存記録に、この月の料率を適用','apply-rate'):''),
+        'style="border-top:1px solid var(--rule);padding-top:12px"'))+
+    box('店舗管理',state.stores.map(editStore).join('')+form('storeEdit',field('追加する店舗名',input('name','text','','required maxlength="60"'))+submit('店舗を追加')))+
+    disclosure('オプション設定',
+      state.settings.options.map(o=>'<div class="record">'+optionForm(o)+'</div>').join('')+
+      '<details><summary>＋ オプションを追加</summary>'+optionForm()+'</details>','options')+
+    disclosure('マイ目標・休日売上の対象日',form('holidayForm',
+      '<label class="check">'+input('showGoals','checkbox','yes',state.showGoals?'checked':'')+'月間記録と振り返りに目標を表示</label>'+
+      '<h3>休日売上に含める曜日</h3><div class="checks">'+weekdays.map((w,i)=>'<label class="check">'+input('weekday','checkbox',i,state.holidays.includes(i)?'checked':'')+w+'</label>').join('')+'</div>'+
+      field('追加の対象日（1行に1日、例 2026-11-23）',textarea('holidayDates',state.holidayDates.join('\n')))+
+      '<p class="sub">休日売上は、指定した曜日・日付に行った施術の税抜売上です。</p>'+submit('表示・対象日を保存'))+
+      state.goals.map(g=>'<details class="record"><summary>'+goalFields[g.metric]+' ／ '+metricText(g.metric,g.target)+'</summary>'+goalEditor(g)+'</details>').join('')+
+      '<details><summary>＋ 目標を追加</summary>'+goalEditor()+'</details>','goals')+
+    disclosure('入力項目の表示',form('hideForm',Object.entries(optionalFields).map(([k,label])=>'<label class="check">'+input('showField','checkbox',k,show(k)?'checked':'')+label+'を表示</label>').join('')+
+      '<p class="sub">入力欄を隠しても、保存済みの記録は集計や詳細に残ります。</p>'+submit('表示を保存')),'fields')+
+    disclosure('過去実績の登録',form('historyForm',field('実績の月',monthInput('historyMonth',historyMonth))+
+      '<p class="sub">同じ月に日別記録がある場合は日別記録を集計します。過去実績は月単位で保存します。</p>'+
+      (hist&&Object.keys(state.days).some(d=>d.startsWith(historyMonth))?'<p class="warning">この月は日別記録を集計しています。</p>':'')+
+      '<div class="split">'+Object.entries(historyFields).map(([k,label])=>{
+        const value=hist?.[k];
+        return field(label+(isTime(k)?'（時間）':''),k==='pay'?input(k,'number',value,'min="-1000000000" max="1000000000" step="1"'):
+          numeric(k,isTime(k)&&value!=null?+(value/60).toFixed(6):value,isTime(k)?1e7:1e9,isTime(k)?'any':'1'));
+      }).join('')+'</div><div class="row">'+submit('月の実績を保存')+(hist?button('月の実績を削除','history-remove','','danger'):'')+'</div>')+
+      form('carryForm','<h3>利用開始前の累計施術時間</h3>'+field('この月より前の累計',monthInput('carryMonth',state.carry?.month??'',true))+
+        field('累計（時間）',numeric('carryHours',state.carry?+(state.carry.minutes/60).toFixed(6):'',1e7,'any'))+
+        '<p class="sub">累計に含まれる期間の月別・日別記録は、累計表示で重複しません。両欄を空にして保存すると解除できます。</p>'+submit('開始前の累計を保存')),'history')+
+    box('バックアップ・復元・データ移行',
+      button('JSONバックアップを保存','backup')+
+      field('施術ログ＋のJSONを復元',input('restore','file','','accept=".json,application/json"'))+
+      '<p class="sub">検証に通ったバックアップで、施術ログ＋の記録・設定を復元します。</p>'+
+      field('通常版 施術ログのJSONを取り込む',input('legacy','file','','accept=".json,application/json"'))+
+      '<p class="sub">未登録の日付を追加します。取り込んだ記録には元の単価・料率を使います。初期状態で取り込むと店舗・単価・月別料率も引き継ぎます。</p>'+
+      '<div class="row divider">'+button('全記録を削除','open-reset',hasRecords?'':'disabled','danger')+'</div>'+
+      '<dialog id="reset-dialog" aria-labelledby="reset-title"><h2 id="reset-title">施術ログ＋の全記録を削除</h2><div class="stack">'+
+      '<p>このブラウザの施術ログ＋の日別・施術ごとの記録とメモ、入金記録、過去実績、開始前の累計を削除します。</p>'+
+      '<p>店舗、単価・料率、オプション、マイ目標、休日・入力欄の設定は保持します。通常版の施術ログとJSONファイルには影響しません。</p>'+
+      '<p class="sub">元の施術ログのJSONを確認し、現在の施術ログ＋のバックアップを保存してから削除してください。</p>'+
+      '<div class="row">'+button('JSONバックアップを保存','backup')+'</div>'+
+      '<div class="row">'+button('キャンセル','cancel-reset','autofocus')+button('施術ログ＋の記録を削除','confirm-reset','','danger')+'</div></div></dialog>')+
+    disclosure('使い方・注意事項',
+      '<p>日付と店舗ごとに実績を記録します。施術ごとに入力すると、施術時間・指名・オプションを日別合計に反映します。まとめ入力と併用する場合、個別記録はまとめの内訳に含めてください。</p>'+
+      '<p>まとめ入力では、税込基本施術売上は「個別に入力した料金の合計 ＋ 残り時間の概算（初期設定は税込3,600円／60分）」です。個別分は合計施術時間に含まれ、二重に足しません。</p>'+
+      '<p>報酬は税込基本施術売上を基に計算し、指名・オプション報酬を加え、利用料・材料費を引きます。振り返り・目標用の売上は税込基本施術売上÷1.10で、指名料・オプション料金は含みません。</p>'+
+      '<p>顧客の名前・電話番号などはメモに入れないでください。記録は端末のブラウザに保存されます。機種変更・ブラウザ変更時はJSONで引き継いでください。</p>','guide')+
+    '<p class="sub version">施術ログ＋ Ver.1.3 ｜ B面</p>';
+}
+function render() {
+  const openedEntry=[...app.querySelectorAll('.entry-panel details[open]')].map(el=>{
+    const card=el.closest('[data-detail]');
+    const row=el.closest('[data-entry]');
+    return [row?.dataset.entry,card?.dataset.detail,el.dataset.fold??el.querySelector('summary')?.textContent.split('（')[0]].join('|');
+  });
+  const openMonth=[...app.querySelectorAll('[data-print-expand][open]')].map(el=>el.dataset.fold);
+  const settingsOpen=[...app.querySelectorAll('[data-setting][open]')].map(el=>el.dataset.setting);
+  app.innerHTML=(storageError?'<p class="panel warning">'+esc(storageError)+'</p>':'')+
+    ({entry:entryScreen,month:monthScreen,review:reviewScreen,settings:settingsScreen}[tab])();
+  if(tab==='entry')for(const el of app.querySelectorAll('.entry-panel details')) {
+    const card=el.closest('[data-detail]');
+    const row=el.closest('[data-entry]');
+    const key=[row?.dataset.entry,card?.dataset.detail,el.dataset.fold??el.querySelector('summary')?.textContent.split('（')[0]].join('|');
+    if(openedEntry.includes(key))el.open=true;
+  }
+  for(const el of app.querySelectorAll('[data-print-expand]'))if(openMonth.includes(el.dataset.fold))el.open=true;
+  for(const key of settingsOpen) {
+    const el=app.querySelector('[data-setting="'+key+'"]');
+    if(el)el.open=true;
+  }
+  document.querySelectorAll('[data-tab]').forEach(b=>{
+    const selected=b.dataset.tab===tab;
+    b.classList.toggle('active',selected);
+    if(selected)b.setAttribute('aria-current','page');
+    else b.removeAttribute('aria-current');
+  });
+}
+function refreshCharge(card,d,e) {
+  if(d.charge===null)card.querySelector('[name="charge"]').value=Math.round(d.minutes*e.pay.base/60);
+  card.querySelector('.charge-status').textContent=d.charge===null?'概算料金':'実入力料金';
+}
+function editInput(el) {
+  if(el.name==='entryDate')return;
+  if(el.hasAttribute('data-clock')) {
+    if(el.value.length===4&&el.selectionStart===4)el.value=normalizeClock(el.value)??el.value;
+    el.removeAttribute('aria-invalid');
+  }
+  const note=el.closest('[data-note]');
+  if(note) {
+    const n=draft.notes[+note.dataset.note];
+    if(el.name==='noteMark')n.mark=el.value;
+    if(el.name==='noteText')n.text=el.value;
+    dirty=true;
+    return;
+  }
+  const row=el.closest('[data-entry]');
+  if(!row)return;
+  const e=draft.entries[+row.dataset.entry];
+  const card=el.closest('[data-detail]');
+  if(card) {
+    const d=e.details[+card.dataset.detail];
+    if(el.name==='option')d.options=[...card.querySelectorAll('[name="option"]:checked')].map(input=>input.value);
+    else if(el.name==='charge') {
+      d.charge=maybeNumber(el.value);
+      card.querySelector('.charge-status').textContent=d.charge===null?'概算料金':'実入力料金';
+    } else {
+      d[el.name]=el.name==='minutes'?Number(el.value):el.value;
+      if(el.name==='minutes')refreshCharge(card,d,e);
+    }
+  } else if(el.name.startsWith('work.')) {
+    const key=el.name.slice(5);
+    if(key==='mode') {
+      if(el.value==='total'&&e.work.total===null)e.work.total=entryTotals(e).work;
+      e.work.mode=el.value;
+      dirty=true;
+      render();
+      return;
+    }
+    if(['hours','minutes'].includes(key)) {
+      const a=row.querySelector('[name="work.hours"]').value,b=row.querySelector('[name="work.minutes"]').value;
+      e.work.total=a===''&&b===''?null:Number(a)*60+Number(b);
+    } else e.work[key]=key==='breaks'?Number(el.value):el.value;
+  } else if(el.name==='store') {
+    e.store=el.value;
+    dirty=true;
+    render();
+    return;
+  } else {
+    e[el.name]=el.name==='minutes'?Number(el.value):maybeNumber(el.value);
+  }
+  dirty=true;
+  updateEstimate();
+}
+function checkedClock(value,label) {
+  const time=normalizeClock(value);
+  check(time!==null,label+'は24時間表記で入力してください（例 1330、13:30）。');
+  return time;
+}
+function sortDetailsByTime(details) {
+  const sortKey=detail=>normalizeClock(detail.time)||'99:99';
+  details.sort((a,b)=>sortKey(a).localeCompare(sortKey(b)));
+}
+function saveDay() {
+  check(validDate(date),'日付を確認してください。');
+  const day=structuredClone(draft);
+  if(day.status==='off')day.entries=[];
+  for(const e of day.entries) {
+    e.work.start=checkedClock(e.work.start,'出勤時刻');
+    e.work.end=checkedClock(e.work.end,'退勤時刻');
+    e.details.forEach((detail,i)=>{detail.time=checkedClock(detail.time,'施術 '+(i+1)+' の開始時刻');});
+    check(e.mode!=='detail'||e.details.length>0,'個別の施術を追加するか、1日まとめて入力を選んでください。');
+    check(e.details.every(d=>integer(d.minutes,1440)&&d.minutes>0&&nullable(d.charge,integer)),'個別の施術時間・税込料金を確認してください。');
+    check(integer(e.minutes,1440)&&nullable(e.personalMinutes,v=>integer(v,1440))&&nullable(e.genderMinutes,v=>integer(v,1440)),'施術時間・指名時間は0〜1440の整数で入力してください。');
+    if(e.work.mode==='clock'&&e.work.start&&e.work.end) {
+      check(clockSpan(e.work.start,e.work.end)>0,'出勤と退勤の時刻を確認してください。');
+      check(e.work.breaks<=clockSpan(e.work.start,e.work.end),'勤務時間より休憩時間が長くなっています。');
+    }
+    check(nullable(e.work.total,v=>integer(v,1440))&&integer(e.work.breaks,1440),'勤務時間を確認してください。');
+    validateEntry(e,state.stores.map(s=>s.id));
+  }
+  day.notes=day.notes.filter(n=>n.text.trim()).map(n=>({...n,text:n.text.trim()}));
+  const historyOverlaps=!own(state.days,date)&&own(state.history,date.slice(0,7));
+  if(historyOverlaps&&!confirm('同じ月に過去実績があります。この日を保存すると、この月の集計は日別記録に切り替わります。保存しますか？'))return;
+  const next=structuredClone(state);
+  next.days[date]=day;
+  persist(next);
+  draft=loadDay(date);
+  dirty=false;
+  render();
+  notice('保存されました\nお疲れ様でした。',false,2600);
+}
+function setViewMonth(m) {
+  month=m;
+  detailDate='';
+  render();
+}
+function handler(entry,card,key,b) {
+  const e=entry?draft.entries[+entry.dataset.entry]:null;
+  const item=card?e.details[+card.dataset.detail]:null;
+  switch(key) {
+    case 'status':if(draft.status===b.dataset.status)return;draft.status=b.dataset.status;break;
+    case 'entry-add':{
+      const store=state.stores.find(s=>!draft.entries.some(e=>e.store===s.id));
+      if(!store)return;
+      draft.entries.push(blankEntry(state,date,store.id));
+      break;
+    }
+    case 'entry-remove':
+      if(draft.entries.length===1)throw new Error('出勤記録には店舗枠を1つ入力してください。');
+      if(!confirm('この店舗枠を外しますか？'))return;
+      draft.entries.splice(+entry.dataset.entry,1);break;
+    case 'mode':
+      if(e.mode===b.dataset.mode)return;
+      if(b.dataset.mode==='detail'&&(e.minutes||e.personal||e.gender||Object.values(e.counts).some(Boolean))&&
+        !confirm('この店舗枠の集計を、個別記録のみで計算しますか？ まとめの入力は編集画面に保持されます。'))return;
+      if(b.dataset.mode==='summary'&&!e.minutes&&e.details.length) {
+        Object.assign(e,detailTotals(e.details));
+      }
+      e.mode=b.dataset.mode;
+      if(e.mode==='detail'&&!e.details.length)e.details.push(blankDetail());
+      break;
+    case 'count':{
+      const name=b.dataset.key;
+      const obj=name.startsWith('option-')?e.counts:e;
+      const k=obj===e?name:name.slice(7);
+      const v=Math.min(1e9,Math.max(0,(obj[k]??0)+Number(b.dataset.delta)));
+      obj[k]=v;
+      entry.querySelector('[data-count-value="'+name+'"]').textContent=v;
+      dirty=true;
+      updateEstimate();
+      return;
+    }
+    case 'detail-add':e.details.push(blankDetail());break;
+    case 'detail-move':{
+      const from=Number(card.dataset.detail);
+      const to=from+Number(b.dataset.delta);
+      if(to<0||to>=e.details.length)return;
+      [e.details[from],e.details[to]]=[e.details[to],e.details[from]];
+      dirty=true;
+      render();
+      const moved=app.querySelector('[data-entry="'+entry.dataset.entry+'"] [data-detail="'+to+'"]');
+      const controls=moved?.querySelectorAll('[data-action="detail-move"]:enabled');
+      const direction=moved?.querySelector('[data-action="detail-move"][data-delta="'+b.dataset.delta+'"]:enabled');
+      (direction??controls?.[0])?.focus();
+      return;
+    }
+    case 'detail-sort':{
+      sortDetailsByTime(e.details);
+      dirty=true;
+      render();
+      app.querySelector('[data-entry="'+entry.dataset.entry+'"] [data-action="detail-sort"]')?.focus();
+      return;
+    }
+    case 'detail-remove':
+      if(!confirm('この施術を外しますか？'))return;
+      e.details.splice(+card.dataset.detail,1);break;
+    case 'estimate-reset':item.charge=null;refreshCharge(card,item,e);dirty=true;updateEstimate();return;
+    case 'note-add':draft.notes.push({mark:'📝',text:''});break;
+    case 'note-remove':draft.notes.splice(+b.closest('[data-note]').dataset.note,1);break;
+    case 'save-day':saveDay();return;
+    case 'delete-day':
+      if(!confirm(date+'の記録を削除しますか？'))return;
+      changeState(next=>{delete next.days[date]},'日別記録を削除しました',false);
+      draft=loadDay(date);dirty=false;render();return;
+    case 'show-day':detailDate=b.dataset.date;render();$('selected-day')?.scrollIntoView({block:'start'});return;
+    case 'edit-day':openDate(b.dataset.date);return;
+    case 'review-month':reviewMonth=b.dataset.month;render();return;
+    case 'rank-open':
+      month=b.dataset.key.slice(0,7);detailDate=b.dataset.key.length===10?b.dataset.key:'';filterStore='';go('month');
+      if(detailDate)$('selected-day')?.scrollIntoView({block:'start'});
+      return;
+    case 'apply-rate':{
+      const rate=state.rates[rateMonth];
+      check(rate!==undefined,'この月の利用料率を先に保存してください。');
+      if(!confirm('この月の料率が未設定の記録に '+num(rate,4)+'% を適用しますか？'))return;
+      changeState(next=>{
+        for(const [d,day] of Object.entries(next.days))if(d.startsWith(rateMonth)) {
+          for(const e of day.entries)if(e.pay.rate===null)e.pay.rate=rate;
+        }
+      },'未設定の記録に料率を適用しました');
+      return;
+    }
+    case 'remove-option':
+      if(confirm('このオプションを今後の入力欄から外しますか？'))changeState(next=>{next.settings.options=next.settings.options.filter(o=>o.id!==b.dataset.id)});
+      return;
+    case 'remove-goal':
+      if(confirm('この目標を削除しますか？'))changeState(next=>{next.goals=next.goals.filter(g=>g.id!==b.dataset.id)});
+      return;
+    case 'history-remove':
+      if(confirm('この月の過去実績を削除しますか？'))changeState(next=>{delete next.history[historyMonth]});
+      return;
+    case 'open-reset':$('reset-dialog').showModal();return;
+    case 'cancel-reset':$('reset-dialog').close();return;
+    case 'confirm-reset':
+      if(!$('reset-dialog')?.open)return;
+      changeState(next=>{next.days={};next.deposits={};next.history={};next.carry=null;},'施術ログ＋の全記録を削除しました',false);
+      draft=loadDay(date);dirty=false;detailDate='';render();return;
+    case 'backup':download('施術ログプラス_'+today+'.json','application/json',JSON.stringify(state,null,2));return;
+    case 'csv':exportCsv();return;
+    case 'hourly':exportHourly();return;
+    case 'print':window.print();return;
+    default:return;
+  }
+  dirty=true;
+  render();
+}
+function submitForm(f) {
+  const fd=new FormData(f);
+  const vals=Object.fromEntries(fd);
+  switch(f.dataset.form) {
+    case 'depositForm':
+      return changeState(next=>{
+        if(vals.amount===''&&!vals.paidDate){delete next.deposits[month];return;}
+        next.deposits[month]={amount:maybeNumber(vals.amount),date:vals.paidDate};
+      });
+    case 'payForm':
+      return changeState(next=>{for(const k of Object.keys(payFields))next.settings[k]=Number(vals[k]);});
+    case 'rateForm':
+      return changeState(next=>{next.rates[vals.rateMonth]=Number(vals.rate);},'月の利用料率を保存しました');
+    case 'storeEdit':
+      check(vals.name.trim(),'店舗名を入力してください。');
+      return changeState(next=>{
+        if(f.dataset.id)next.stores.find(s=>s.id===f.dataset.id).name=vals.name.trim();
+        else next.stores.push({id:uid(),name:vals.name.trim()});
+      });
+    case 'optionEdit':
+      check(vals.name.trim(),'オプション名を入力してください。');
+      return changeState(next=>{
+        const item={id:f.dataset.id??uid(),name:vals.name.trim(),share:Number(vals.share)};
+        const idx=next.settings.options.findIndex(o=>o.id===item.id);
+        if(idx>=0)next.settings.options[idx]=item;
+        else next.settings.options.push(item);
+      });
+    case 'holidayForm':{
+      const dates=[...new Set(vals.holidayDates.split(/\s+/).filter(Boolean))];
+      check(dates.every(validDate),'追加対象日は YYYY-MM-DD の形式で入力してください。');
+      return changeState(next=>{next.holidays=fd.getAll('weekday').map(Number);next.holidayDates=dates;next.showGoals=fd.has('showGoals');});
+    }
+    case 'goalEdit':{
+      check(validDate(vals.from)&&validDate(vals.to)&&vals.from<=vals.to,'目標期間を確認してください。');
+      const target=isTime(vals.metric)?Math.round(Number(vals.target)*60):Number(vals.target);
+      check(finite(target,.01),'目標値は0より大きくしてください。');
+      const g={id:f.dataset.id??uid(),metric:vals.metric,from:vals.from,to:vals.to,target};
+      return changeState(next=>{next.goals=[...next.goals.filter(o=>o.id!==g.id),g]});
+    }
+    case 'hideForm':
+      return changeState(next=>{next.hidden=Object.keys(optionalFields).filter(k=>!fd.getAll('showField').includes(k));});
+    case 'historyForm':{
+      const row=Object.fromEntries(Object.keys(historyFields).map(k=>[k,vals[k]===''?null:isTime(k)?Math.round(Number(vals[k])*60):Number(vals[k])]));
+      check(Object.values(row).some(v=>v!==null),'登録する実績を1つ以上入力してください。');
+      return changeState(next=>{next.history[historyMonth]=row});
+    }
+    case 'carryForm':{
+      const both=vals.carryMonth&&vals.carryHours!=='';
+      check(both||(!vals.carryMonth&&vals.carryHours===''),'基準月と累計時間をセットで入力してください。');
+      return changeState(next=>{next.carry=both?{month:vals.carryMonth,minutes:Math.round(Number(vals.carryHours)*60)}:null});
+    }
+  }
+}
+function download(name,type,content) {
+  const url=URL.createObjectURL(new Blob([content],{type}));
+  const a=document.createElement('a');
+  a.href=url;a.download=name;
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+function csvCell(v) {
+  let text=v??'';
+  if(typeof text==='string'&&/^[\s]*[=+\-@\t\r\n]/.test(text))text="'"+text;
+  return '"'+String(text).replaceAll('"','""')+'"';
+}
+function exportCsv() {
+  const header=['種別','日付・対象月','店舗','出勤区分','施術分','個人指名件数','個人指名分','性別指名件数','性別指名分','税込基本施術売上円','税抜施術売上円','休日施術売上税抜円','実入力料金円','概算料金円','売上の区分','報酬見込み円','勤務分','勤務開始','勤務終了','休憩分','稼働率%','施術開始','指名区分','施術内容','オプション内訳','メモ','システム利用料率%','システム利用料円','施設利用料円','固定材料費円','指名報酬円','オプション報酬円','入金日','入金額円','出勤日数','休日数'];
+  const rows=[];
+  for(const d of Object.keys(state.days).sort()) {
+    if(!d.startsWith(month))continue;
+    const day=state.days[d];
+    const note=day.notes.map(n=>n.mark+' '+n.text).join('\n');
+    if(day.status==='off'&&!filterStore) {
+      const row=['日別',d,'','休み'];row[25]=note;rows.push(row);
+    }
+    for(const e of day.entries.filter(e=>!filterStore||filterStore===e.store)) {
+      const v=entryTotals(e);
+      const countText=e.pay.options.filter(o=>v.counts[o.id]).map(o=>o.name+' '+v.counts[o.id]+'件').join('・');
+      rows.push(['日別',d,nameOf(e.store),'出勤',v.minutes,v.personal,v.personalMinutes,v.gender,v.genderMinutes,v.gross,v.net,isHoliday(state,d)?v.net:0,
+        v.source==='actual'||v.source==='mixed'?v.actual:null,v.source==='estimate'||v.source==='mixed'?v.estimated:null,sourceLabel[v.source],v.pay,v.work,
+        e.work.mode==='clock'?e.work.start:null,e.work.mode==='clock'?e.work.end:null,e.work.mode==='clock'?e.work.breaks:null,v.work>0?v.minutes/v.work*100:null,
+        null,null,null,countText,note,e.pay.rate,v.system,v.facility,v.material,v.personalPay+v.genderPay,v.options]);
+      for(const item of e.details) {
+        const charge=item.charge??item.minutes*e.pay.base/60;
+        rows.push(['施術内訳',d,nameOf(e.store),null,item.minutes,null,null,null,null,charge,charge/1.1,null,
+          item.charge,item.charge===null?charge:null,item.charge===null?'概算':'実入力',null,null,null,null,null,null,
+          item.time,kinds[item.kind],item.content,item.options.map(id=>e.pay.options.find(o=>o.id===id).name).join('・'),item.memo]);
+      }
+    }
+  }
+  const total=monthTotals(state,month,filterStore);
+  const dep=filterStore?null:state.deposits[month];
+  if(rows.length||total.historic||dep) {
+    const row=[total.historic?'過去実績月合計':'月合計',month,filterStore?nameOf(filterStore):'',null,total.minutes,total.personal,total.personalMinutes,total.gender,total.genderMinutes,null,total.net,total.holiday,null,null,null,total.pay,total.work,null,null,null,total.utilization===null?null:total.utilization*100];
+    row[32]=dep?.date;row[33]=dep?.amount;row[34]=total.workDays;row[35]=total.offDays;
+    rows.push(row);
+  }
+  check(rows.length>0,'出力する月の記録がありません。');
+  download('施術ログプラス_'+month+'.csv','text/csv;charset=utf-8','\uFEFF'+[header,...rows].map(row=>header.map((_,i)=>csvCell(row[i])).join(',')).join('\r\n')+'\r\n');
+}
+function exportHourly() {
+  const table=new Map();
+  for(const [d,day] of Object.entries(state.days).sort(([a],[b])=>a.localeCompare(b))) {
+    if(!d.startsWith(month))continue;
+    for(const e of day.entries.filter(e=>!filterStore||filterStore===e.store)) {
+      for(const detail of e.details.filter(detail=>detail.time)) {
+        const hour=detail.time.slice(0,2);
+        const key=[d,e.store,hour].join('|');
+        if(!table.has(key))table.set(key,{date:d,store:nameOf(e.store),hour,free:0,personal:0,gender:0});
+        table.get(key)[detail.kind]++;
+      }
+    }
+  }
+  check(table.size,'開始時刻を記録した施術がありません。');
+  const rows=[['日付','店舗','時間帯','フリー件数','個人指名件数','性別指名件数'],
+    ...[...table.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.store.localeCompare(b.store)||a.hour.localeCompare(b.hour))
+      .map(r=>[r.date,r.store,r.hour+'時台',r.free,r.personal,r.gender])];
+  download('施術ログプラス_時間帯別_'+month+'.csv','text/csv;charset=utf-8','\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n')+'\r\n');
+}
+async function importFile(el) {
+  const file=el.files?.[0];
+  if(!file)return;
+  try {
+    check(file.size<=20*1024*1024,'20MB以下のJSONを選んでください。');
+    const raw=JSON.parse(await file.text());
+    if(el.name==='restore') {
+      const next=validateState(raw);
+      if(!confirm('施術ログ＋の記録と設定を、このバックアップの内容に置き換えますか？'))return;
+      persist(next,true);
+      notice('バックアップを復元しました');
+    } else {
+      const result=mergeLegacy(state,migrateLegacy(raw));
+      if(!result.added&&!result.adoptsSettings){notice('追加できる日付はありません。既存の日付 '+result.skipped+'件');return;}
+      if(!confirm('日別記録を '+result.added+'日追加します。既存の日付 '+result.skipped+'日は残します。'+(result.adoptsSettings?' 店舗・報酬設定も引き継ぎます。':'')+' 取り込みますか？'))return;
+      persist(result.next);
+      notice(result.added+'日を取り込みました。既存の日付 '+result.skipped+'日');
+    }
+    draft=loadDay(date);
+    dirty=false;
+    if(filterStore&&!state.stores.some(s=>s.id===filterStore))filterStore='';
+    render();
+  } catch(e) {
+    notice(e instanceof SyntaxError?'JSONを読み取れませんでした。現在の記録はそのままです。':e.message,true);
+  } finally {el.value='';}
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab)));
+app.addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-action]');
+  if(!b)return;
+  try {handler(b.closest('[data-entry]'),b.closest('[data-detail]'),b.dataset.action,b)} catch(e){notice(e.message,true)}
+});
+app.addEventListener('input',ev=>{
+  if(tab==='entry'&&ev.target.matches('input,select,textarea'))editInput(ev.target);
+});
+app.addEventListener('focusout',ev=>{
+  const el=ev.target;
+  if(!el.matches('input[data-clock]'))return;
+  const formatted=normalizeClock(el.value);
+  if(formatted===null)el.setAttribute('aria-invalid','true');
+  else if(el.value!==formatted) {
+    el.value=formatted;
+    editInput(el);
+  }
+});
+app.addEventListener('change',ev=>{
+  const el=ev.target;
+  switch(el.name) {
+    case 'entryDate':if(validDate(el.value))openDate(el.value);el.value=date;break;
+    case 'monthView':if(validMonth(el.value))setViewMonth(el.value);break;
+    case 'storeFilter':filterStore=el.value;render();break;
+    case 'reviewMonth':if(validMonth(el.value)){reviewMonth=el.value;render();}break;
+    case 'rateMonth':if(validMonth(el.value)){rateMonth=el.value;render();}break;
+    case 'historyMonth':if(validMonth(el.value)){historyMonth=el.value;render();}break;
+    case 'chartMetric':chartMetric=el.value;render();break;
+    case 'restore':case 'legacy':void importFile(el);break;
+    case 'charge': {
+      const card=el.closest('[data-detail]');
+      const entry=draft.entries[+card.closest('[data-entry]').dataset.entry];
+      refreshCharge(card,entry.details[+card.dataset.detail],entry);
+      break;
+    }
+  }
+});
+app.addEventListener('submit',ev=>{
+  ev.preventDefault();
+  try {submitForm(ev.target);} catch(e){notice(e.message,true)}
+});
+let printOpened=[];
+window.addEventListener('beforeprint',()=>{
+  printOpened=[...app.querySelectorAll('[data-print-expand]:not([open])')];
+  for(const el of printOpened)el.open=true;
+});
+window.addEventListener('afterprint',()=>{
+  for(const el of printOpened)el.open=false;
+  printOpened=[];
+});
+window.addEventListener('beforeunload',ev=>{if(dirty){ev.preventDefault();ev.returnValue='';}});
+render();
+
+</script>
+</body>
+</html>

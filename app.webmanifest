@@ -1,0 +1,25 @@
+{
+  "id": "/sejutsu-log-plus/",
+  "start_url": "/sejutsu-log-plus/",
+  "scope": "/sejutsu-log-plus/",
+  "name": "施術ログ＋",
+  "short_name": "施術ログ＋",
+  "lang": "ja",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
