@@ -247,7 +247,9 @@ function initialState() {
 function snapshot(state,date) {
   return {...structuredClone(state.settings),rate:state.rates[date.slice(0,7)]??null};
 }
-function blankEntry(state,date,store=state.stores[0].id) {
+const activeStores = state => state.stores.filter(store=>!store.archived);
+const storeHasRecords = (state,id) => Object.values(state.days).some(day=>day.entries.some(entry=>entry.store===id));
+function blankEntry(state,date,store=activeStores(state)[0].id) {
   return {store,mode:'summary',minutes:0,personal:0,gender:0,personalMinutes:null,genderMinutes:null,counts:{},work:{mode:'clock',start:'',end:'',breaks:0,total:null},details:[],pay:snapshot(state,date)};
 }
 function blankDetail() {
@@ -349,7 +351,8 @@ function validateEntry(e,stores) {
 function validateState(s) {
   check(obj(s)&&s.format===STORAGE_KEY&&s.version===1&&Array.isArray(s.stores)&&s.stores.length>0);
   const ids=s.stores.map(o=>o?.id);
-  check(new Set(ids).size===ids.length&&s.stores.every(o=>idOK(o.id)&&textOK(o.name)&&o.name.trim()));
+  check(new Set(ids).size===ids.length&&s.stores.every(o=>obj(o)&&idOK(o.id)&&textOK(o.name)&&o.name.trim()&&(o.archived===undefined||typeof o.archived==='boolean')));
+  check(activeStores(s).length>0);
   validateSettings(s.settings);
   check(obj(s.rates)&&Object.entries(s.rates).every(([m,v])=>validMonth(m)&&finite(v,0,100)));
   check(obj(s.days)&&obj(s.deposits)&&obj(s.history));
@@ -466,7 +469,10 @@ const submit = label => '<button class="primary" type="submit">'+label+'</button
 const dateInput = (name,value) => input(name,'date',value,'required min="1900-01-01" max="2199-12-31"');
 const monthInput = (name,value,optional=false) => input(name,'month',value,(optional?'':'required')+' min="1900-01" max="2199-12"');
 const nameOf = id => state.stores.find(x=>x.id===id)?.name??'店舗';
-const storeOptions = (id,exclude=[]) => state.stores.filter(x=>x.id===id||!exclude.includes(x.id)).map(x=>option(x.id,x.name,id)).join('');
+const storeOptions = id => state.stores.map(s=>option(s.id,s.name,id)).join('');
+const entryStoreOptions = (id,exclude) => state.stores
+  .filter(s=>s.id===id||(!s.archived&&!exclude.includes(s.id)))
+  .map(s=>option(s.id,s.name+(s.archived?'（非表示）':''),id)).join('');
 const openIf = v => v?' open':'';
 const show = key => !state.hidden.includes(key);
 let state=initialState(), stored=null, storageError='';
@@ -575,7 +581,7 @@ function entryFields(e,i) {
     button('＋ 施術を追加','detail-add')+'</div>';
   return '<section class="record store-record" data-entry="'+i+'">'+
     (draft.entries.length>1?'<div class="line"><h3>店舗 '+(i+1)+'</h3>'+button('削除','entry-remove','aria-label="店舗枠を削除"','danger quiet')+'</div>':'')+
-    field('店舗',select('store',storeOptions(e.store,others)))+
+    field('店舗',select('store',entryStoreOptions(e.store,others)))+
     (detail?'<p class="sub">施術ごとに入力</p>'+individual+switchMode:
       field('合計施術時間（分）',numeric('minutes',e.minutes,1440,1,'inputmode="numeric"'))+
       '<div class="counter-list">'+stepper('個人指名','personal',e.personal)+stepper('性別指名','gender',e.gender)+
@@ -590,7 +596,7 @@ function entryFields(e,i) {
 }
 function entryScreen() {
   const saved=state.days[date];
-  const canAdd=state.stores.some(s=>!draft.entries.some(e=>e.store===s.id));
+  const canAdd=activeStores(state).some(s=>!draft.entries.some(e=>e.store===s.id));
   return '<section class="panel entry-panel"><h1>毎日の記録</h1>'+
     field('日付',dateInput('entryDate',date))+'<div class="stack"><span class="field-label">勤務状況</span><div class="split">'+
     ['work','off'].map(s=>button(s==='work'?'出勤':'休み','status','data-status="'+s+'" aria-pressed="'+(draft.status===s)+'"',draft.status===s?'active':'')).join('')+
@@ -786,8 +792,34 @@ function reviewScreen() {
     box(year+'年の記録',chart(year)+groupStats(annualTotals(year)))+
     box('自己ベスト','<p class="sub">施術ログ＋に登録した実績の上位5件です。</p>'+ranks());
 }
-function editStore(s) {
-  return form('storeEdit','<div class="line">'+field('店舗名',input('name','text',s.name,'required maxlength="60"'))+submit('変更を保存')+'</div>','data-id="'+s.id+'"');
+function storeManagement() {
+  const activeCount=activeStores(state).length;
+  const stores=state.stores.map(s=>{
+    const attrs='data-id="'+s.id+'"';
+    const disabled=!s.archived&&activeCount===1?' disabled':'';
+    const used=storeHasRecords(state,s.id);
+    const visibility=used||s.archived
+      ? button(s.archived?'再表示':'非表示','toggle-store',attrs+disabled)
+      : '';
+    const removal=used?'':button('削除','open-store-delete',attrs+disabled,'danger');
+    return '<div class="record">'+form('storeEdit',
+      field('店舗名',input('name','text',s.name,'required maxlength="60"'))+
+      '<div class="row">'+submit('名前を保存')+visibility+removal+
+      (s.archived?'<span class="sub">非表示</span>':'')+'</div>',attrs)+'</div>';
+  }).join('');
+  return stores+
+    '<p class="sub">入力で選べる店舗を1つ以上残してください。非表示にした店舗の過去の記録は、月間記録で確認できます。</p>'+
+    form('storeEdit',field('追加する店舗名',input('name','text','','required maxlength="60"'))+submit('店舗を追加'))+
+    '<dialog id="store-delete-dialog" aria-labelledby="store-delete-title"><h2 id="store-delete-title">店舗の削除</h2>'+
+    '<div class="stack"><p id="store-delete-message"></p><div class="row">'+
+    button('キャンセル','cancel-store-delete','autofocus')+
+    button('削除する','confirm-store-delete','','danger')+'</div></div></dialog>';
+}
+function storeForChange(id) {
+  const store=state.stores.find(s=>s.id===id);
+  check(store,'店舗が見つかりません。');
+  check(store.archived||activeStores(state).length>1,'入力で選べる店舗を1つ以上残してください。');
+  return store;
 }
 function optionForm(o) {
   return form('optionEdit','<div class="split">'+field('オプション名',input('name','text',o?.name,'required maxlength="60"'))+
@@ -818,7 +850,7 @@ function settingsScreen() {
         field('優待適用後のシステム利用料率（%）',numeric('rate',rate,100,'any','required'))+'</div>'+submit('月の利用料率を保存')+
         (missing?'<p class="sub">料率未設定の店舗枠 '+missing+'件</p>'+button('未設定の既存記録に、この月の料率を適用','apply-rate'):''),
         'style="border-top:1px solid var(--rule);padding-top:12px"'))+
-    box('店舗管理',state.stores.map(editStore).join('')+form('storeEdit',field('追加する店舗名',input('name','text','','required maxlength="60"'))+submit('店舗を追加')))+
+    box('店舗管理',storeManagement(),'stores-settings')+
     disclosure('オプション設定',
       state.settings.options.map(o=>'<div class="record">'+optionForm(o)+'</div>').join('')+
       '<details><summary>＋ オプションを追加</summary>'+optionForm()+'</details>','options')+
@@ -860,7 +892,7 @@ function settingsScreen() {
       '<p>まとめ入力では、税込基本施術売上は「個別に入力した料金の合計 ＋ 残り時間の概算（初期設定は税込3,600円／60分）」です。個別分は合計施術時間に含まれ、二重に足しません。</p>'+
       '<p>報酬は税込基本施術売上を基に計算し、指名・オプション報酬を加え、利用料・材料費を引きます。振り返り・目標用の売上は税込基本施術売上÷1.10で、指名料・オプション料金は含みません。</p>'+
       '<p>顧客の名前・電話番号などはメモに入れないでください。記録は端末のブラウザに保存されます。機種変更・ブラウザ変更時はJSONで引き継いでください。</p>','guide')+
-    '<p class="sub version">施術ログ＋ Ver.1.3 ｜ B面</p>';
+    '<p class="sub version">施術ログ＋ Ver.1.4 ｜ B面</p>';
 }
 function render() {
   const openedEntry=[...app.querySelectorAll('.entry-panel details[open]')].map(el=>{
@@ -995,7 +1027,7 @@ function handler(entry,card,key,b) {
   switch(key) {
     case 'status':if(draft.status===b.dataset.status)return;draft.status=b.dataset.status;break;
     case 'entry-add':{
-      const store=state.stores.find(s=>!draft.entries.some(e=>e.store===s.id));
+      const store=activeStores(state).find(s=>!draft.entries.some(e=>e.store===s.id));
       if(!store)return;
       draft.entries.push(blankEntry(state,date,store.id));
       break;
@@ -1084,6 +1116,35 @@ function handler(entry,card,key,b) {
     case 'history-remove':
       if(confirm('この月の過去実績を削除しますか？'))changeState(next=>{delete next.history[historyMonth]});
       return;
+    case 'toggle-store':{
+      const store=storeForChange(b.dataset.id);
+      changeState(next=>{
+        const target=next.stores.find(s=>s.id===store.id);
+        if(store.archived)delete target.archived;
+        else target.archived=true;
+      },store.archived?'店舗を再表示しました':'店舗を入力の選択肢から非表示にしました');
+      return;
+    }
+    case 'open-store-delete':{
+      const store=storeForChange(b.dataset.id);
+      check(!storeHasRecords(state,store.id),'施術記録のある店舗は非表示にできます。');
+      const dialog=$('store-delete-dialog');
+      dialog.dataset.storeId=store.id;
+      $('store-delete-message').textContent='「'+store.name+'」を削除しますか？';
+      dialog.showModal();
+      return;
+    }
+    case 'cancel-store-delete':$('store-delete-dialog').close();return;
+    case 'confirm-store-delete':{
+      const dialog=$('store-delete-dialog');
+      if(!dialog?.open)return;
+      const store=storeForChange(dialog.dataset.storeId);
+      check(!storeHasRecords(state,store.id),'施術記録のある店舗は非表示にできます。');
+      changeState(next=>{next.stores=next.stores.filter(s=>s.id!==store.id);},'店舗を削除しました',false);
+      if(filterStore===store.id)filterStore='';
+      render();
+      return;
+    }
     case 'open-reset':$('reset-dialog').showModal();return;
     case 'cancel-reset':$('reset-dialog').close();return;
     case 'confirm-reset':
