@@ -174,6 +174,22 @@ dialog::backdrop { background: #192b407a; }
   font-size: 13px;
 }
 
+.campaign-panel { border-color: #f0d8c3; }
+.campaign-panel .primary { background: #a34612; border-color: #a34612; }
+.campaign-panel .campaign-record { border-color: #f0d8c3; }
+.campaign-record h3 { overflow-wrap: anywhere; }
+.campaign-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.campaign-metrics > div { min-width: 0; padding: 9px 3px; border-radius: 8px; background: #fff2e6; text-align: center; }
+.campaign-metrics dt { color: #704426; font-size: clamp(.6875rem, 3.33vw, .8125rem); white-space: nowrap; }
+.campaign-metrics dd { color: #84370f; font-size: clamp(.875rem, 3.7vw, 1.375rem); font-weight: 800; font-variant-numeric: tabular-nums; }
+.campaign-unit { display: inline-block; white-space: nowrap; }
+.campaign-unit > span { font-size: .73em; }
+.campaign-unit-long { font-size: .75em; }
+.campaign-record progress { width: 100%; height: 14px; accent-color: #b85116; }
+.campaign-success { color: #84370f; font-weight: 750; }
+.campaign-dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 10px; }
+#campaign-dialog { width: min(410px, calc(100% - 28px)); }
+
 </style>
 </head>
 <body>
@@ -190,7 +206,8 @@ dialog::backdrop { background: #192b407a; }
 'use strict';
 
 const STORAGE_KEY = 'bside-sejutsu-log-plus-v1';
-const today = new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+const japanDate = new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit'});
+const today = japanDate.format(new Date());
 const weekdays = ['日','月','火','水','木','金','土'];
 const kinds = {free:'フリー',personal:'個人指名',gender:'性別指名'};
 const payFields = {base:'税込換算単価（円／60分）',facility:'施設利用料（円／60分）',material:'固定材料費（円／60分）',personal:'個人指名報酬（円／件）',gender:'性別指名報酬（円／件）'};
@@ -242,7 +259,7 @@ const completeSum = values => values.includes(null)?null:sum(values,v=>v);
 const uid = () => crypto.randomUUID?.() ?? 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2);
 const legacyOptions = () => [{id:'mattress',name:'プレミアムマットレス',share:0}];
 function initialState() {
-  return {format:STORAGE_KEY,version:1,stores:[{id:'store1',name:'店舗A'}],settings:{base:3600,facility:212,material:108,personal:0,gender:0,options:legacyOptions()},rates:{},days:{},deposits:{},history:{},carry:null,goals:[],showGoals:true,holidays:[0,6],holidayDates:[],hidden:[]};
+  return {format:STORAGE_KEY,version:1,stores:[{id:'store1',name:'店舗A'}],settings:{base:3600,facility:212,material:108,personal:0,gender:0,options:legacyOptions()},rates:{},days:{},deposits:{},history:{},carry:null,goals:[],showGoals:true,holidays:[0,6],holidayDates:[],hidden:[],campaigns:[]};
 }
 function snapshot(state,date) {
   return {...structuredClone(state.settings),rate:state.rates[date.slice(0,7)]??null};
@@ -319,6 +336,22 @@ function goalProgress(state,g) {
   const partial=values.includes(null)||(g.metric==='personalMinutes'&&dayTotals.personalMissing);
   return {value:values.length?optionalSum(values):0,partial};
 }
+function campaignProgress(state,campaign,asOf) {
+  const lastDate=asOf<campaign.to?asOf:campaign.to;
+  const recorded=Object.entries(state.days)
+    .filter(([date])=>date>=campaign.from&&date<=lastDate)
+    .flatMap(([date,day])=>dailyRows(state,date,day));
+  const minutes=sum(recorded,row=>row.minutes);
+  const remaining=Math.max(0,campaign.target-minutes);
+  const days=Math.max(0,(dateOf(campaign.to)-dateOf(asOf))/86400000+1);
+  const achieved=remaining===0;
+  return {minutes,remaining,days,achieved,percent:minutes/campaign.target*100,
+    daily:achieved?0:days>0?Math.ceil(remaining/days):null};
+}
+function validCampaign(c) {
+  return obj(c)&&idOK(c.id)&&typeof c.name==='string'&&c.name.length<=80&&
+    validDate(c.from)&&validDate(c.to)&&c.from<=c.to&&integer(c.target)&&c.target>0;
+}
 function nullableAdd(a,b) {return a===null||b===null?null:a+b}
 function validateSettings(s,withRate=false) {
   check(obj(s)&&Object.keys(payFields).every(k=>finite(s[k]))&&Array.isArray(s.options));
@@ -371,6 +404,9 @@ function validateState(s) {
   check(s.carry===null||(obj(s.carry)&&validMonth(s.carry.month)&&integer(s.carry.minutes)));
   check(Array.isArray(s.goals)&&new Set(s.goals.map(g=>g?.id)).size===s.goals.length&&s.goals.every(g=>obj(g)&&idOK(g.id)&&own(goalFields,g.metric)&&validDate(g.from)&&validDate(g.to)&&g.from<=g.to&&finite(g.target,.01)));
   check(typeof s.showGoals==='boolean'&&Array.isArray(s.holidays)&&s.holidays.every(d=>integer(d,6))&&Array.isArray(s.holidayDates)&&s.holidayDates.every(validDate)&&Array.isArray(s.hidden)&&s.hidden.every(k=>own(optionalFields,k)));
+  if(!own(s,'campaigns'))s.campaigns=[];
+  check(Array.isArray(s.campaigns)&&s.campaigns.every(validCampaign)&&
+    new Set(s.campaigns.map(c=>c.id)).size===s.campaigns.length,'バックアップのキャンペーン設定を確認してください。');
   return s;
 }
 function migrateLegacy(raw) {
@@ -780,12 +816,85 @@ function ranks() {
         'rank-open','data-key="'+key+'"','rank line')).join(''):'<p class="sub">集計できる記録がありません。</p>')+'</div></details>';
   }).join('');
 }
+const campaignUnit = (value,unit) => num(value)+unit;
+function campaignDuration(value,format=campaignUnit) {
+  const wholeHours=Math.floor(value/60);
+  const minutes=value%60;
+  return (wholeHours?format(wholeHours,'時間'):'')+(minutes||!wholeHours?format(minutes,'分'):'');
+}
+function campaignMetricUnit(value,unit) {
+  const size=value>=100000?' campaign-unit-long':'';
+  return '<span class="campaign-unit'+size+'">'+num(value)+'<span>'+unit+'</span></span>';
+}
+const campaignName = campaign => campaign.name||'キャンペーン';
+function campaignCard(campaign,asOf) {
+  const progress=campaignProgress(state,campaign,asOf);
+  const status=asOf>campaign.to?'終了':asOf<campaign.from?'開始前':'開催中';
+  const percent=num(progress.achieved?progress.percent:Math.min(progress.percent,99.9),1);
+  const label=esc(campaignName(campaign));
+  return '<article class="record campaign-record">'+
+    '<div class="line"><h3>'+label+'</h3><span class="sub">'+status+'</span></div>'+
+    '<p class="sub">'+campaign.from+' 〜 '+campaign.to+'</p>'+
+    '<dl class="campaign-metrics">'+
+      [['達成時間',campaignDuration(progress.minutes,campaignMetricUnit)],
+        ['残り必要時間',campaignDuration(progress.remaining,campaignMetricUnit)],['残り日数',campaignMetricUnit(progress.days,'日')]]
+        .map(([key,value])=>'<div><dt>'+key+'</dt><dd>'+value+'</dd></div>').join('')+'</dl>'+
+    lines([['目標施術時間',campaignDuration(campaign.target)],['達成率',percent+'％'],
+      ['1日あたりの必要施術時間',progress.daily===null?'—':campaignDuration(progress.daily)]])+
+    '<progress max="100" value="'+Math.min(progress.percent,100)+'" aria-label="'+label+'の達成率"></progress>'+
+    (progress.achieved?'<p class="campaign-success">目標達成！お疲れ様でした！</p>':'')+
+    '<div class="row no-print">'+button('編集','campaign-edit','data-id="'+campaign.id+'" aria-label="'+label+'を編集"')+'</div>'+
+    '</article>';
+}
+let campaignDate='';
+function campaignPanel() {
+  campaignDate=japanDate.format(new Date());
+  const ordered=[...state.campaigns].sort((a,b)=>b.to.localeCompare(a.to)||b.from.localeCompare(a.from));
+  const current=ordered.filter(c=>c.from<=campaignDate&&campaignDate<=c.to);
+  const upcoming=ordered.filter(c=>c.from>campaignDate).reverse();
+  const finished=ordered.filter(c=>c.to<campaignDate);
+  return '<section class="panel campaign-panel" aria-labelledby="campaign-title">'+
+    '<div class="line"><h2 id="campaign-title">キャンペーン</h2>'+
+    button('設定を追加','campaign-add','','primary no-print')+'</div>'+
+    [...current,...upcoming].map(c=>campaignCard(c,campaignDate)).join('')+
+    (finished.length?fold('終了したキャンペーン（'+num(finished.length)+'件）',
+      '<div class="stack">'+finished.map(c=>campaignCard(c,campaignDate)).join('')+'</div>','campaign-history'):'')+
+    (state.campaigns.length?'<p class="sub">期間内の今日までの施術記録を全店舗分集計します。残り日数は今日を含みます。</p>':'')+
+    '<dialog id="campaign-dialog" aria-labelledby="campaign-dialog-title"></dialog></section>';
+}
+function openCampaignDialog(campaign) {
+  const dialog=$('campaign-dialog');
+  const attrs=campaign?'data-id="'+campaign.id+'"':'';
+  dialog.innerHTML='<h2 id="campaign-dialog-title">'+(campaign?'キャンペーンを編集':'キャンペーンを設定')+'</h2>'+
+    form('campaignEdit',
+      field('キャンペーン名（任意）',input('name','text',campaign?.name??'','maxlength="80"'))+
+      '<div class="campaign-dates">'+field('開始日',dateInput('from',campaign?.from??campaignDate))+
+      field('終了日',dateInput('to',campaign?.to??''))+'</div>'+
+      field('目標施術時間（時間）',input('target','number',campaign?Number((campaign.target/60).toFixed(2)):'',
+        'required min="0.01" max="16666666.67" step="0.01" inputmode="decimal" placeholder="例 208"'))+
+      '<div class="row">'+submit('保存')+button('キャンセル','campaign-cancel')+
+      (campaign?button('削除','campaign-delete',attrs,'danger'):'')+'</div>',attrs);
+  dialog.onclose=refreshCampaignDate;
+  dialog.showModal();
+}
+function repaintCampaign(id='') {
+  render();
+  const edit=id&&app.querySelector('[data-action="campaign-edit"][data-id="'+id+'"]');
+  if(edit) {
+    const history=edit.closest('[data-fold="campaign-history"]');
+    if(history)history.open=true;
+  }
+  (edit||app.querySelector('[data-action="campaign-add"]'))?.focus({preventScroll:true});
+}
+function refreshCampaignDate() {
+  if(tab==='review'&&campaignDate!==japanDate.format(new Date())&&!$('campaign-dialog')?.open)render();
+}
 function reviewScreen() {
   const year=reviewMonth.slice(0,4);
   const logged=sum(allMonths(state),m=>monthTotals(state,m).minutes??0);
   const prefix=state.carry?state.carry.month:'';
   const countedBefore=prefix?sum(allMonths(state).filter(m=>m<prefix),m=>monthTotals(state,m).minutes??0):0;
-  return heading('振り返り')+'<section class="panel hero"><h2>累計施術時間</h2><strong style="font-size:1.9rem">'+hours(logged-countedBefore+(state.carry?.minutes??0))+'</strong>'+
+  return heading('振り返り')+campaignPanel()+'<section class="panel hero"><h2>累計施術時間</h2><strong style="font-size:1.9rem">'+hours(logged-countedBefore+(state.carry?.minutes??0))+'</strong>'+
     (state.carry?'<p class="sub">'+monthLabel(prefix)+'より前は、登録した開始前累計を使用しています。</p>':'')+'</section>'+
     (state.showGoals&&state.goals.length?box('マイ目標',state.goals.map(goalCard).join('')):'')+
     box('月別の記録',field('表示月',monthInput('reviewMonth',reviewMonth))+groupStats(monthTotals(state,reviewMonth)))+
@@ -892,7 +1001,7 @@ function settingsScreen() {
       '<p>まとめ入力では、税込基本施術売上は「個別に入力した料金の合計 ＋ 残り時間の概算（初期設定は税込3,600円／60分）」です。個別分は合計施術時間に含まれ、二重に足しません。</p>'+
       '<p>報酬は税込基本施術売上を基に計算し、指名・オプション報酬を加え、利用料・材料費を引きます。振り返り・目標用の売上は税込基本施術売上÷1.10で、指名料・オプション料金は含みません。</p>'+
       '<p>顧客の名前・電話番号などはメモに入れないでください。記録は端末のブラウザに保存されます。機種変更・ブラウザ変更時はJSONで引き継いでください。</p>','guide')+
-    '<p class="sub version">施術ログ＋ Ver.1.4 ｜ B面</p>';
+    '<p class="sub version">施術ログ＋ Ver.1.5 ｜ B面</p>';
 }
 function render() {
   const openedEntry=[...app.querySelectorAll('.entry-panel details[open]')].map(el=>{
@@ -901,6 +1010,7 @@ function render() {
     return [row?.dataset.entry,card?.dataset.detail,el.dataset.fold??el.querySelector('summary')?.textContent.split('（')[0]].join('|');
   });
   const openMonth=[...app.querySelectorAll('[data-print-expand][open]')].map(el=>el.dataset.fold);
+  const campaignHistoryOpen=app.querySelector('[data-fold="campaign-history"]')?.open;
   const settingsOpen=[...app.querySelectorAll('[data-setting][open]')].map(el=>el.dataset.setting);
   app.innerHTML=(storageError?'<p class="panel warning">'+esc(storageError)+'</p>':'')+
     ({entry:entryScreen,month:monthScreen,review:reviewScreen,settings:settingsScreen}[tab])();
@@ -911,6 +1021,8 @@ function render() {
     if(openedEntry.includes(key))el.open=true;
   }
   for(const el of app.querySelectorAll('[data-print-expand]'))if(openMonth.includes(el.dataset.fold))el.open=true;
+  const campaignHistory=app.querySelector('[data-fold="campaign-history"]');
+  if(campaignHistory&&campaignHistoryOpen)campaignHistory.open=true;
   for(const key of settingsOpen) {
     const el=app.querySelector('[data-setting="'+key+'"]');
     if(el)el.open=true;
@@ -1110,6 +1222,21 @@ function handler(entry,card,key,b) {
     case 'remove-option':
       if(confirm('このオプションを今後の入力欄から外しますか？'))changeState(next=>{next.settings.options=next.settings.options.filter(o=>o.id!==b.dataset.id)});
       return;
+    case 'campaign-add':openCampaignDialog();return;
+    case 'campaign-edit':{
+      const campaign=state.campaigns.find(c=>c.id===b.dataset.id);
+      if(campaign)openCampaignDialog(campaign);
+      return;
+    }
+    case 'campaign-cancel':$('campaign-dialog').close();return;
+    case 'campaign-delete':{
+      const campaign=state.campaigns.find(c=>c.id===b.dataset.id);
+      if(campaign&&confirm('「'+campaignName(campaign)+'」を削除しますか？')) {
+        changeState(next=>{next.campaigns=next.campaigns.filter(c=>c.id!==campaign.id)},'キャンペーンを削除しました',false);
+        repaintCampaign();
+      }
+      return;
+    }
     case 'remove-goal':
       if(confirm('この目標を削除しますか？'))changeState(next=>{next.goals=next.goals.filter(g=>g.id!==b.dataset.id)});
       return;
@@ -1191,6 +1318,19 @@ function submitForm(f) {
       const dates=[...new Set(vals.holidayDates.split(/\s+/).filter(Boolean))];
       check(dates.every(validDate),'追加対象日は YYYY-MM-DD の形式で入力してください。');
       return changeState(next=>{next.holidays=fd.getAll('weekday').map(Number);next.holidayDates=dates;next.showGoals=fd.has('showGoals');});
+    }
+    case 'campaignEdit':{
+      check(validDate(vals.from)&&validDate(vals.to)&&vals.from<=vals.to,'終了日を開始日以降にしてください。');
+      const target=Math.round(Number(vals.target)*60);
+      check(integer(target)&&target>0,'目標施術時間を1分以上にしてください。');
+      const campaign={id:f.dataset.id??uid(),name:vals.name.trim(),from:vals.from,to:vals.to,target};
+      changeState(next=>{
+        const index=next.campaigns.findIndex(c=>c.id===campaign.id);
+        if(index<0)next.campaigns.push(campaign);
+        else next.campaigns[index]=campaign;
+      },'キャンペーンを保存しました',false);
+      repaintCampaign(campaign.id);
+      return;
     }
     case 'goalEdit':{
       check(validDate(vals.from)&&validDate(vals.to)&&vals.from<=vals.to,'目標期間を確認してください。');
@@ -1346,6 +1486,11 @@ app.addEventListener('change',ev=>{
 app.addEventListener('submit',ev=>{
   ev.preventDefault();
   try {submitForm(ev.target);} catch(e){notice(e.message,true)}
+});
+window.addEventListener('focus',refreshCampaignDate);
+setInterval(refreshCampaignDate,60000);
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden)refreshCampaignDate();
 });
 let printOpened=[];
 window.addEventListener('beforeprint',()=>{
