@@ -63,7 +63,6 @@ input[type=file] { font-size: 14px !important; }
 textarea { resize: vertical; line-height: 1.5; }
 input[type=checkbox], input[type=radio] { width: 19px; height: 19px; flex: none; accent-color: var(--blue); }
 .check { min-height: 44px; display: flex; align-items: center; gap: 7px; }
-.checks { display: flex; flex-wrap: wrap; gap: 0 10px; }
 .counter-list .line { padding: 4px 0; flex-wrap: nowrap; border-bottom: 1px solid #edf0f3; }
 .counter-list .line > span { font-size: 15px; }
 .count { display: flex; align-items: center; gap: 7px; flex: none; }
@@ -87,6 +86,8 @@ details[open] > summary { margin-bottom: 6px; }
 .results > div:last-child { border-bottom: 0; }
 .results dt { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
 .results dd { flex-shrink: 0; text-align: right; white-space: nowrap; font-size: 15px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.results > .result-with-note { display: grid; grid-template-columns: minmax(0,1fr) auto; row-gap: 4px; }
+.results dd.result-note { grid-column: 1 / -1; text-align: left; white-space: normal; font-size: 13px; font-weight: 400; }
 .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
 .dow { padding-bottom: 3px; text-align: center; font-size: 13px; color: var(--muted); }
 .day { min-height: 71px; padding: 4px 0; display: grid; align-content: start; justify-items: center; gap: 1px; border-radius: 7px; font-size: 14px; line-height: 1.15; }
@@ -302,10 +303,15 @@ function entryTotals(e) {
     genderMinutes:count.genderMinutes??(genderMissing&&!detail.gender?null:detail.genderMinutes),
     personalMissing,genderMissing,counts:count.counts,actual,estimated,gross,net:gross/1.1,source,options,facility,material,personalPay,genderPay,system,pay,work};
 }
-const isHoliday = (state,d) => state.holidays.includes(weekday(d)) || state.holidayDates.includes(d);
+function defaultHolidaySales(date) {
+  const day=weekday(date);
+  return day===0||day===6;
+}
+// The old rules are used only to classify records imported without a saved checkbox.
+const legacyHolidaySales = (state,date) => state.holidays.includes(weekday(date)) || state.holidayDates.includes(date);
 function dailyRows(state, date, day, store='') {
   if(day.status==='off') return [];
-  return day.entries.filter(e=>!store||e.store===store).map(e=>({date,...entryTotals(e),holiday:isHoliday(state,date)}));
+  return day.entries.filter(e=>!store||e.store===store).map(e=>({date,...entryTotals(e),holiday:day.holidaySales}));
 }
 function groupTotals(rows,offDays=0) {
   const minutes=sum(rows,r=>r.minutes);
@@ -389,9 +395,12 @@ function validateState(s) {
   validateSettings(s.settings);
   check(obj(s.rates)&&Object.entries(s.rates).every(([m,v])=>validMonth(m)&&finite(v,0,100)));
   check(obj(s.days)&&obj(s.deposits)&&obj(s.history));
+  check(Array.isArray(s.holidays)&&s.holidays.every(d=>integer(d,6))&&Array.isArray(s.holidayDates)&&s.holidayDates.every(validDate));
   for(const [date,day] of Object.entries(s.days)) {
     check(validDate(date)&&obj(day)&&['work','off'].includes(day.status)&&Array.isArray(day.notes)&&day.notes.every(n=>obj(n)&&['📝','⭐'].includes(n.mark)&&textOK(n.text))&&Array.isArray(day.entries));
     check(day.status==='work'?day.entries.length>0:day.entries.length===0);
+    if(!own(day,'holidaySales'))day.holidaySales=legacyHolidaySales(s,date);
+    check(typeof day.holidaySales==='boolean');
     for(const e of day.entries)validateEntry(e,ids);
   }
   for(const [m,v] of Object.entries(s.deposits))check(validMonth(m)&&obj(v)&&nullable(v.amount,integer)&&(v.date===''||validDate(v.date)));
@@ -403,13 +412,13 @@ function validateState(s) {
   }
   check(s.carry===null||(obj(s.carry)&&validMonth(s.carry.month)&&integer(s.carry.minutes)));
   check(Array.isArray(s.goals)&&new Set(s.goals.map(g=>g?.id)).size===s.goals.length&&s.goals.every(g=>obj(g)&&idOK(g.id)&&own(goalFields,g.metric)&&validDate(g.from)&&validDate(g.to)&&g.from<=g.to&&finite(g.target,.01)));
-  check(typeof s.showGoals==='boolean'&&Array.isArray(s.holidays)&&s.holidays.every(d=>integer(d,6))&&Array.isArray(s.holidayDates)&&s.holidayDates.every(validDate)&&Array.isArray(s.hidden)&&s.hidden.every(k=>own(optionalFields,k)));
+  check(typeof s.showGoals==='boolean'&&Array.isArray(s.hidden)&&s.hidden.every(k=>own(optionalFields,k)));
   if(!own(s,'campaigns'))s.campaigns=[];
   check(Array.isArray(s.campaigns)&&s.campaigns.every(validCampaign)&&
     new Set(s.campaigns.map(c=>c.id)).size===s.campaigns.length,'バックアップのキャンペーン設定を確認してください。');
   return s;
 }
-function migrateLegacy(raw) {
+function migrateLegacy(raw,holidayRules=initialState()) {
   check(obj(raw)&&(raw.version===1||raw.version===undefined)&&Array.isArray(raw.stores)&&raw.stores.length>0&&obj(raw.settings)&&obj(raw.rates)&&obj(raw.days),'通常版の施術ログから書き出したJSONを選んでください。');
   const s=initialState();
   s.stores=structuredClone(raw.stores);
@@ -441,7 +450,7 @@ function migrateLegacy(raw) {
         work:{...entry.work,start:oldClock(o.start),end:oldClock(o.end),breaks:Number(o.breaks??0)}};
     });
     const notes=Array.isArray(day.notes)?day.notes.map(n=>({mark:n?.mark==='⭐'?'⭐':'📝',text:String(n?.text??'')})):day.note?[{mark:'📝',text:String(day.note)}]:[];
-    s.days[date]={status:day.status,entries,notes};
+    s.days[date]={status:day.status,entries,notes,holidaySales:legacyHolidaySales(holidayRules,date)};
   }
   return validateState(s);
 }
@@ -497,7 +506,9 @@ const option = (value,label,selected) => '<option value="'+esc(value)+'" '+(valu
 const select = (name,html,attr='') => '<select name="'+name+'" '+attr+'>'+html+'</select>';
 const textarea = (name,value) => '<textarea name="'+name+'" rows="2" maxlength="1000">'+esc(value)+'</textarea>';
 const box = (title,html,id='') => '<section class="panel"'+(id?' id="'+id+'"':'')+'><h2>'+title+'</h2>'+html+'</section>';
-const lines = items => '<dl class="results">'+items.map(([label,value])=>'<div><dt>'+label+'</dt><dd>'+value+'</dd></div>').join('')+'</dl>';
+const lines = items => '<dl class="results">'+items.map(([label,value,note])=>
+  '<div'+(note?' class="result-with-note"':'')+'><dt>'+label+'</dt><dd>'+value+'</dd>'+
+  (note?'<dd class="sub result-note">'+note+'</dd>':'')+'</div>').join('')+'</dl>';
 const fold = (title,html,key,print=false) => '<details class="fold" data-fold="'+key+'"'+(print?' data-print-expand':'')+'><summary>'+title+'</summary>'+html+'</details>';
 const form = (id,html,attr='') => '<form data-form="'+id+'" class="stack" '+attr+'>'+html+'</form>';
 const stepper = (label,key,value) => '<div class="line"><span>'+esc(label)+'</span><div class="count">'+button('−','count','data-key="'+key+'" data-delta="-1" aria-label="'+esc(label)+'を減らす"')+'<output data-count-value="'+key+'">'+value+'</output>'+button('＋','count','data-key="'+key+'" data-delta="1" aria-label="'+esc(label)+'を増やす"')+'</div></div>';
@@ -520,7 +531,7 @@ let tab='entry',date=today,month=today.slice(0,7),reviewMonth=month,filterStore=
 let rateMonth=month,historyMonth=month, timer, dirty=false, detailDate='';
 let draft=loadDay(date);
 function loadDay(d) {
-  return own(state.days,d)?structuredClone(state.days[d]):{status:'work',entries:[blankEntry(state,d)],notes:[]};
+  return own(state.days,d)?structuredClone(state.days[d]):{status:'work',entries:[blankEntry(state,d)],notes:[],holidaySales:defaultHolidaySales(d)};
 }
 function notice(msg,error=false,duration=error?8500:4200) {
   clearTimeout(timer);
@@ -634,7 +645,9 @@ function entryScreen() {
   const saved=state.days[date];
   const canAdd=activeStores(state).some(s=>!draft.entries.some(e=>e.store===s.id));
   return '<section class="panel entry-panel"><h1>毎日の記録</h1>'+
-    field('日付',dateInput('entryDate',date))+'<div class="stack"><span class="field-label">勤務状況</span><div class="split">'+
+    field('日付',dateInput('entryDate',date))+
+    '<label class="check field-label">'+input('holidaySales','checkbox','yes',draft.holidaySales?'checked':'')+'休日売上対象</label>'+
+    '<div class="stack"><span class="field-label">勤務状況</span><div class="split">'+
     ['work','off'].map(s=>button(s==='work'?'出勤':'休み','status','data-status="'+s+'" aria-pressed="'+(draft.status===s)+'"',draft.status===s?'active':'')).join('')+
     '</div></div>'+
     (draft.status==='work'?draft.entries.map(entryFields).join('')+(canAdd?button('＋ 別の店舗の記録を追加','entry-add','','wide'):''):'')+
@@ -700,7 +713,7 @@ function groupStats(total) {
   return lines([['報酬目安',total.historic?yen(total.pay):payFmt(total.pay)],['施術時間',hours(total.minutes)],
     ['個人指名時間',recordedHours(total.personalMinutes,total.personalMissing)],['個人指名件数',qty(total.personal)],
     ['性別指名時間',recordedHours(total.genderMinutes,total.genderMissing)],['性別指名件数',qty(total.gender)],
-    ['施術売上（税抜）',yen(total.net)],['休日施術売上（税抜）',yen(total.holiday)],
+    ['施術売上（税抜）',yen(total.net)],['休日施術売上（税抜）',yen(total.holiday),'※『休日売上対象』にチェックした日報の施術売上を集計しています。'],
     ['出勤日数',daysFmt(total.workDays)],['休みの日数',daysFmt(total.offDays)]]);
 }
 function monthlyPayLines(total) {
@@ -742,7 +755,7 @@ function monthScreen() {
   const historyNote=total.historic?'過去実績として登録した月合計です。':
     !filterStore&&own(state.history,month)?'この月は日別記録を集計しています。':'';
   const showingDay=detailDate.startsWith(month);
-  const ad=app.dataset.ads==='true'&&!showingDay
+  const ad=app.dataset.ads==='true'
     ? '<aside class="monthly-ad no-print" aria-label="広告枠">広告枠</aside>'
     : '';
   return '<section class="panel"><h1>月間記録</h1>'+ad+
@@ -963,11 +976,9 @@ function settingsScreen() {
     disclosure('オプション設定',
       state.settings.options.map(o=>'<div class="record">'+optionForm(o)+'</div>').join('')+
       '<details><summary>＋ オプションを追加</summary>'+optionForm()+'</details>','options')+
-    disclosure('マイ目標・休日売上の対象日',form('holidayForm',
+    disclosure('マイ目標',form('goalDisplayForm',
       '<label class="check">'+input('showGoals','checkbox','yes',state.showGoals?'checked':'')+'月間記録と振り返りに目標を表示</label>'+
-      '<h3>休日売上に含める曜日</h3><div class="checks">'+weekdays.map((w,i)=>'<label class="check">'+input('weekday','checkbox',i,state.holidays.includes(i)?'checked':'')+w+'</label>').join('')+'</div>'+
-      field('追加の対象日（1行に1日、例 2026-11-23）',textarea('holidayDates',state.holidayDates.join('\n')))+
-      '<p class="sub">休日売上は、指定した曜日・日付に行った施術の税抜売上です。</p>'+submit('表示・対象日を保存'))+
+      submit('表示を保存'))+
       state.goals.map(g=>'<details class="record"><summary>'+goalFields[g.metric]+' ／ '+metricText(g.metric,g.target)+'</summary>'+goalEditor(g)+'</details>').join('')+
       '<details><summary>＋ 目標を追加</summary>'+goalEditor()+'</details>','goals')+
     disclosure('入力項目の表示',form('hideForm',Object.entries(optionalFields).map(([k,label])=>'<label class="check">'+input('showField','checkbox',k,show(k)?'checked':'')+label+'を表示</label>').join('')+
@@ -1001,7 +1012,7 @@ function settingsScreen() {
       '<p>まとめ入力では、税込基本施術売上は「個別に入力した料金の合計 ＋ 残り時間の概算（初期設定は税込3,600円／60分）」です。個別分は合計施術時間に含まれ、二重に足しません。</p>'+
       '<p>報酬は税込基本施術売上を基に計算し、指名・オプション報酬を加え、利用料・材料費を引きます。振り返り・目標用の売上は税込基本施術売上÷1.10で、指名料・オプション料金は含みません。</p>'+
       '<p>顧客の名前・電話番号などはメモに入れないでください。記録は端末のブラウザに保存されます。機種変更・ブラウザ変更時はJSONで引き継いでください。</p>','guide')+
-    '<p class="sub version">施術ログ＋ Ver.1.5 ｜ B面</p>';
+    '<p class="sub version">施術ログ＋ Ver.1.6 ｜ B面</p>';
 }
 function render() {
   const openedEntry=[...app.querySelectorAll('.entry-panel details[open]')].map(el=>{
@@ -1040,6 +1051,11 @@ function refreshCharge(card,d,e) {
 }
 function editInput(el) {
   if(el.name==='entryDate')return;
+  if(el.name==='holidaySales') {
+    draft.holidaySales=el.checked;
+    dirty=true;
+    return;
+  }
   if(el.hasAttribute('data-clock')) {
     if(el.value.length===4&&el.selectionStart===4)el.value=normalizeClock(el.value)??el.value;
     el.removeAttribute('aria-invalid');
@@ -1314,11 +1330,8 @@ function submitForm(f) {
         if(idx>=0)next.settings.options[idx]=item;
         else next.settings.options.push(item);
       });
-    case 'holidayForm':{
-      const dates=[...new Set(vals.holidayDates.split(/\s+/).filter(Boolean))];
-      check(dates.every(validDate),'追加対象日は YYYY-MM-DD の形式で入力してください。');
-      return changeState(next=>{next.holidays=fd.getAll('weekday').map(Number);next.holidayDates=dates;next.showGoals=fd.has('showGoals');});
-    }
+    case 'goalDisplayForm':
+      return changeState(next=>{next.showGoals=fd.has('showGoals');});
     case 'campaignEdit':{
       check(validDate(vals.from)&&validDate(vals.to)&&vals.from<=vals.to,'終了日を開始日以降にしてください。');
       const target=Math.round(Number(vals.target)*60);
@@ -1378,7 +1391,7 @@ function exportCsv() {
     for(const e of day.entries.filter(e=>!filterStore||filterStore===e.store)) {
       const v=entryTotals(e);
       const countText=e.pay.options.filter(o=>v.counts[o.id]).map(o=>o.name+' '+v.counts[o.id]+'件').join('・');
-      rows.push(['日別',d,nameOf(e.store),'出勤',v.minutes,v.personal,v.personalMinutes,v.gender,v.genderMinutes,v.gross,v.net,isHoliday(state,d)?v.net:0,
+      rows.push(['日別',d,nameOf(e.store),'出勤',v.minutes,v.personal,v.personalMinutes,v.gender,v.genderMinutes,v.gross,v.net,day.holidaySales?v.net:0,
         v.source==='actual'||v.source==='mixed'?v.actual:null,v.source==='estimate'||v.source==='mixed'?v.estimated:null,sourceLabel[v.source],v.pay,v.work,
         e.work.mode==='clock'?e.work.start:null,e.work.mode==='clock'?e.work.end:null,e.work.mode==='clock'?e.work.breaks:null,v.work>0?v.minutes/v.work*100:null,
         null,null,null,countText,note,e.pay.rate,v.system,v.facility,v.material,v.personalPay+v.genderPay,v.options]);
@@ -1431,7 +1444,7 @@ async function importFile(el) {
       persist(next,true);
       notice('バックアップを復元しました');
     } else {
-      const result=mergeLegacy(state,migrateLegacy(raw));
+      const result=mergeLegacy(state,migrateLegacy(raw,state));
       if(!result.added&&!result.adoptsSettings){notice('追加できる日付はありません。既存の日付 '+result.skipped+'件');return;}
       if(!confirm('日別記録を '+result.added+'日追加します。既存の日付 '+result.skipped+'日は残します。'+(result.adoptsSettings?' 店舗・報酬設定も引き継ぎます。':'')+' 取り込みますか？'))return;
       persist(result.next);
